@@ -1,0 +1,30 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: check-yaml
+        exclude: ^helm/templates/
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: name-tests-test
+        exclude: tests/fixtures
+
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: 'v0.0.265'
+    hooks:
+      - id: ruff
+        args: ['--fix']
+
+  - repo: https://github.com/psf/black
+    rev: 23.3.0
+    hooks:
+      - id: black
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        language: system
+        entry: mypy --show-error-codes
+        types: [python]
+        exclude: tests
