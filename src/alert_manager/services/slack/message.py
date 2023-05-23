@@ -4,89 +4,9 @@ from datetime import datetime
 from typing import Any
 
 from alert_manager.enums.grafana import GrafanaAlertState
-from alert_manager.web.entities.grafana import GrafanaAlertRequest
+from alert_manager.web.entities.grafana import EvalMatch
 
 MsgBlocksType = list[dict[str, Any]]
-
-
-def build_alert_message(alert: GrafanaAlertRequest) -> tuple[str, MsgBlocksType]:
-    title = alert.title
-    rule_url = alert.rule_url
-
-    title_block = {
-        'type': 'section',
-        'block_id': f'title|{rule_url}',
-        'text': {'type': 'mrkdwn', 'text': f'<{rule_url}|*{title}*>'},
-    }
-    message_block = {'type': 'section', 'text': {'type': 'mrkdwn', 'text': alert.message}}
-    eval_matches_block = {
-        'type': 'section',
-        'fields': [
-            {'type': 'mrkdwn', 'text': f'*{match.metric}:* {match.value}'}
-            for match in alert.eval_matches
-        ],
-    }
-    snooze_time_select_block = {
-        'type': 'actions',
-        'elements': [
-            {
-                'type': 'static_select',
-                'action_id': 'snooze-for',
-                'placeholder': {
-                    'type': 'plain_text',
-                    'text': 'Snooze for :sleeping:',
-                    'emoji': True,
-                },
-                'options': [
-                    {
-                        'text': {'type': 'plain_text', 'text': 'wake'},
-                        'value': '0',
-                    },
-                    {
-                        'text': {'type': 'plain_text', 'text': '1 min'},
-                        'value': '1',
-                    },
-                    {
-                        'text': {'type': 'plain_text', 'text': '15 min'},
-                        'value': '15',
-                    },
-                    {
-                        'text': {'type': 'plain_text', 'text': '30 min'},
-                        'value': '30',
-                    },
-                    {
-                        'text': {'type': 'plain_text', 'text': '1 hour'},
-                        'value': '60',
-                    },
-                    {
-                        'text': {'type': 'plain_text', 'text': '2 hours'},
-                        'value': '120',
-                    },
-                    {
-                        'text': {'type': 'plain_text', 'text': '5 hours'},
-                        'value': '120',
-                    },
-                    {
-                        'text': {'type': 'plain_text', 'text': '1 day'},
-                        'value': '1440',
-                    },
-                ],
-            }
-        ],
-    }
-
-    blocks: MsgBlocksType
-    if alert.state is GrafanaAlertState.ok:
-        blocks = [title_block]
-    else:
-        blocks = [
-            title_block,
-            *((message_block,) if alert.message else ()),
-            *((eval_matches_block,) if eval_matches_block['fields'] else ()),
-            snooze_time_select_block,
-        ]
-
-    return title, blocks
 
 
 def get_rule_url(message_blocks: MsgBlocksType) -> str:
@@ -100,6 +20,75 @@ def get_rule_url(message_blocks: MsgBlocksType) -> str:
 
 
 class MessageBuilder:
+    status_emoji = {
+        GrafanaAlertState.ok: ':large_green_circle:',
+        GrafanaAlertState.alerting: ':red_circle:',
+        GrafanaAlertState.no_data: ':white_circle:',
+    }
+
+    @classmethod
+    def create_alert_message(
+        cls,
+        state: GrafanaAlertState,
+        title: str,
+        rule_url: str,
+        message: str | None,
+        eval_matches: list[EvalMatch],
+    ) -> tuple[str, MsgBlocksType]:
+        status_emoji = f'{cls.status_emoji.get(state, "")} '
+
+        title_block = {
+            'type': 'section',
+            'block_id': f'title|{rule_url}',
+            'text': {'type': 'mrkdwn', 'text': f'{status_emoji}<{rule_url}|*{title}*>'},
+        }
+        message_block = {
+            'type': 'section',
+            'text': {'type': 'mrkdwn', 'text': message},
+            'fields': [
+                {'type': 'mrkdwn', 'text': f'*{match.metric}:* {match.value}'}
+                for match in eval_matches
+            ],
+        }
+        snooze_time_select_block = {
+            'type': 'actions',
+            'elements': [
+                {
+                    'type': 'static_select',
+                    'action_id': 'snooze-for',
+                    'placeholder': {
+                        'type': 'plain_text',
+                        'text': 'Snooze for :sleeping:',
+                        'emoji': True,
+                    },
+                    'options': [
+                        {'text': {'type': 'plain_text', 'text': text}, 'value': value}
+                        for text, value in [
+                            ('wake', '0'),
+                            ('15 min', '15'),
+                            ('30 min', '30'),
+                            ('1 hour', '60'),
+                            ('2 hours', '120'),
+                            ('5 hours', '300'),
+                            ('1 day', '1440'),
+                        ]
+                    ],
+                }
+            ],
+        }
+
+        blocks: MsgBlocksType
+        if state is GrafanaAlertState.ok:
+            blocks = [title_block]
+        else:
+            blocks = [
+                title_block,
+                message_block,
+                snooze_time_select_block,
+            ]
+
+        return title, blocks
+
     @classmethod
     def add_alert_status_to_message(
         cls, message_blocks: MsgBlocksType, action_data: dict[str, t.Any]
@@ -126,7 +115,7 @@ class MessageBuilder:
             'elements': [
                 {
                     'type': 'mrkdwn',
-                    'text': f":sleeping: Snoozed at {now} UTC, for {period}",
+                    'text': f':sleeping: Snoozed at {now} UTC, for {period}',
                 }
             ],
         }

@@ -29,7 +29,7 @@ it is recommended to use the redis filter backend.
 1. Deploy the alert-manager to your server.
 2. [Create](https://api.slack.com/apps) a Slack app.
 3. Enable Socket Mode in the app settings "Settings" -> "Socket Mode"
-4. Go to "Features" -> "App Manifest" page. Copy the manifest below, paste it into the 
+4. Go to "Features" -> "App Manifest" page. Copy the manifest below, paste it into the
    text field, fill in values in the <> brackets, and click "Save Changes".
     ```yaml
     display_information:

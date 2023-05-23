@@ -8,7 +8,7 @@ from slack_sdk.web.async_client import AsyncWebClient
 
 from alert_manager.services.alert_filter_backend import BaseAlertFilter
 from alert_manager.services.slack.exceptions import RuleUrlExtractError
-from alert_manager.services.slack.message import get_rule_url, MessageBuilder
+from alert_manager.services.slack.message import MessageBuilder, get_rule_url
 
 T = t.TypeVar('T')
 P = t.ParamSpec('P')
