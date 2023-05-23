@@ -10,7 +10,10 @@ from slack_sdk.web.async_client import AsyncWebClient
 from alert_manager.bot.app import create_client as create_slack_socket_client
 from alert_manager.config import Config, FilterBackend
 from alert_manager.logger import init_logger
-from alert_manager.services.alert_filter_backend import InMemoryAlertFilter, RedisAlertFilter
+from alert_manager.services.alert_filter_backend import (
+    InMemoryAlertFilter,
+    RedisAlertFilter,
+)
 from alert_manager.web.views import router
 
 

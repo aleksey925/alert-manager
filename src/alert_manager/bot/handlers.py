@@ -1,5 +1,7 @@
+import copy
 import typing as t
 from datetime import datetime
+from functools import wraps
 
 from slack_sdk.socket_mode.aiohttp import SocketModeClient
 from slack_sdk.socket_mode.request import SocketModeRequest
@@ -8,7 +10,21 @@ from slack_sdk.web.async_client import AsyncWebClient
 
 from alert_manager.services.alert_filter_backend import BaseAlertFilter
 from alert_manager.services.slack.exceptions import RuleUrlExtractError
-from alert_manager.services.slack.message import get_rule_url_from_title
+from alert_manager.services.slack.message import get_rule_url
+
+T = t.TypeVar('T')
+P = t.ParamSpec('P')
+
+
+def auto_ack(func: t.Callable[P, t.Awaitable[T]]) -> t.Callable[P, t.Awaitable[None]]:
+    @wraps(func)
+    async def wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
+        await func(*args, **kwargs)
+        await kwargs['client'].send_socket_mode_response(  # type: ignore[attr-defined]
+            SocketModeResponse(envelope_id=kwargs['request'].envelope_id)  # type: ignore[attr-defined]
+        )
+
+    return wrapper
 
 
 class Dispatcher:
@@ -17,45 +33,50 @@ class Dispatcher:
         self.alert_filter: BaseAlertFilter = alert_filter
 
     async def __call__(self, client: SocketModeClient, request: SocketModeRequest) -> None:
-        if request.type == 'interactive':
-            await self.snooze_handler(client, request)
-
-    async def snooze_handler(self, client: SocketModeClient, request: SocketModeRequest) -> None:
-        period = request.payload['actions'][0]['selected_option']['text']['text']
-        context_block = {
-            "type": "context",
-            "elements": [
-                {
-                    "type": "mrkdwn",
-                    "text": f":sleeping: Snoozed at {datetime.utcnow().strftime('%d %B %Y %H:%M:%S') } UTC, for {period}"
-                }
-            ]
+        actions_by_ids = {
+            action_obj['action_id']: action_obj for action_obj in request.payload['actions']
         }
+        if (
+            request.type == 'interactive'
+            and request.payload['type'] == 'block_actions'
+            and 'snooze-for' in actions_by_ids
+        ):
+            await self.snooze_handler(
+                client=client, request=request, action=actions_by_ids['snooze-for']
+            )
 
-        new_blocks = request.payload['message']['blocks']
-        if new_blocks[-1]['type'] == 'context':
+    @auto_ack
+    async def snooze_handler(
+        self, *, client: SocketModeClient, request: SocketModeRequest, action: dict[str, t.Any]
+    ) -> None:
+        period = action['selected_option']['text']['text']
+
+        new_blocks = copy.deepcopy(request.payload['message']['blocks'])
+        if new_blocks[-1].get('block_id') == 'alert-status':
             new_blocks.pop()
-
         if period != 'wake':
-            new_blocks.append(context_block)
+            new_blocks.append(
+                {
+                    'type': 'context',
+                    'block_id': 'alert-status',
+                    'elements': [
+                        {
+                            'type': 'mrkdwn',
+                            'text': f":sleeping: Snoozed at {datetime.utcnow().strftime('%d %B %Y %H:%M:%S')} UTC, for {period}",
+                        }
+                    ],
+                }
+            )
+
+        rule_url = get_rule_url(request.payload['message']['blocks'])
+        if not rule_url:
+            raise RuleUrlExtractError("Can't extract rule url from source message")
+
+        minutes = int(request.payload['actions'][0]['selected_option']['value'])
+        await self.alert_filter.snooze(rule_url, int(minutes))
 
         await self.slack_client.chat_update(
             channel=request.payload['channel']['id'],
             ts=request.payload['message']['ts'],
             blocks=new_blocks,
         )
-
-        await handle_snooze_action(self.alert_filter, request.payload)
-        await client.send_socket_mode_response(SocketModeResponse(envelope_id=request.envelope_id))
-
-
-async def handle_snooze_action(alert_filter: BaseAlertFilter, payload: dict[str, t.Any]) -> None:
-    rule_url = get_rule_url_from_title(payload['message']['blocks'][0]['text']['text'])
-    if not rule_url:
-        raise RuleUrlExtractError("Can't extract rule url from message title")
-
-    minutes = payload['actions'][0]['selected_option']['value']
-    if minutes == 'wake':
-        await alert_filter.wake(rule_url)
-    else:
-        await alert_filter.snooze(rule_url, int(minutes))

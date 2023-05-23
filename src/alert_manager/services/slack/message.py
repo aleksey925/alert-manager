@@ -1,14 +1,8 @@
-import logging
-import re
+import typing as t
 from typing import Any
-
-from slack_sdk.errors import SlackApiError
-from slack_sdk.web.async_client import AsyncWebClient
 
 from alert_manager.enums.grafana import GrafanaAlertState
 from alert_manager.web.entities.grafana import GrafanaAlertRequest
-
-logger = logging.getLogger(__name__)
 
 MsgBlocksType = list[dict[str, Any]]
 
@@ -19,6 +13,7 @@ def build_alert_message(alert: GrafanaAlertRequest) -> tuple[str, MsgBlocksType]
 
     title_block = {
         'type': 'section',
+        'block_id': f'title|{rule_url}',
         'text': {'type': 'mrkdwn', 'text': f'<{rule_url}|*{title}*>'},
     }
     message_block = {'type': 'section', 'text': {'type': 'mrkdwn', 'text': alert.message}}
@@ -34,7 +29,7 @@ def build_alert_message(alert: GrafanaAlertRequest) -> tuple[str, MsgBlocksType]
         'elements': [
             {
                 'type': 'static_select',
-                'action_id': 'snooze-for-action',
+                'action_id': 'snooze-for',
                 'placeholder': {
                     'type': 'plain_text',
                     'text': 'Snooze for :sleeping:',
@@ -43,7 +38,7 @@ def build_alert_message(alert: GrafanaAlertRequest) -> tuple[str, MsgBlocksType]
                 'options': [
                     {
                         'text': {'type': 'plain_text', 'text': 'wake'},
-                        'value': 'wake',
+                        'value': '0',
                     },
                     {
                         'text': {'type': 'plain_text', 'text': '1 min'},
@@ -92,22 +87,11 @@ def build_alert_message(alert: GrafanaAlertRequest) -> tuple[str, MsgBlocksType]
     return title, blocks
 
 
-async def post_alert(
-    client: AsyncWebClient, text: str, blocks: MsgBlocksType, channel: str
-) -> None:
-    try:
-        await client.chat_postMessage(
-            channel=f'#{channel}',
-            text=text,
-            blocks=blocks,
-        )
-    except SlackApiError:
-        logger.error("Can't post message to slack channel", exc_info=True)
-        raise
+def get_rule_url(message_blocks: list[dict[str, t.Any]]) -> str:
+    url = ''
+    for block in message_blocks:
+        if block.get('block_id', '').startswith('title'):
+            url = block['block_id'].split('|')[1]
+            break
 
-
-def get_rule_url_from_title(title: str) -> str:
-    match = re.search(r'<([^|>]+)\|[^>]+>', title)
-    if match:
-        return match.group(1).replace('amp;', '')
-    return ''
+    return url
