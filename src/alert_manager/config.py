@@ -37,7 +37,7 @@ class Config(BaseSettings):
 
     # slack
     slack_token: str
-    slack_signing_secret: str
+    slack_socket_mode_token: str
 
     # redis
     redis_url: str | None
