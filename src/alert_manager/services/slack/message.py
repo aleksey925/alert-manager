@@ -1,4 +1,6 @@
+import copy
 import typing as t
+from datetime import datetime
 from typing import Any
 
 from alert_manager.enums.grafana import GrafanaAlertState
@@ -87,7 +89,7 @@ def build_alert_message(alert: GrafanaAlertRequest) -> tuple[str, MsgBlocksType]
     return title, blocks
 
 
-def get_rule_url(message_blocks: list[dict[str, t.Any]]) -> str:
+def get_rule_url(message_blocks: MsgBlocksType) -> str:
     url = ''
     for block in message_blocks:
         if block.get('block_id', '').startswith('title'):
@@ -95,3 +97,36 @@ def get_rule_url(message_blocks: list[dict[str, t.Any]]) -> str:
             break
 
     return url
+
+
+class MessageBuilder:
+    @classmethod
+    def add_alert_status_to_message(
+        cls, message_blocks: MsgBlocksType, action_data: dict[str, t.Any]
+    ) -> MsgBlocksType:
+        message_blocks = copy.deepcopy(message_blocks)
+
+        now = datetime.utcnow().strftime('%d %B %Y %H:%M:%S')
+        period = action_data['selected_option']['text']['text']
+
+        if message_blocks[-1].get('block_id') == 'alert-status':
+            message_blocks.pop()
+        if period != 'wake':
+            message_blocks.append(
+                cls._generate_alert_status_block(now=now, period=period),
+            )
+
+        return message_blocks
+
+    @staticmethod
+    def _generate_alert_status_block(now: str, period: str) -> dict[str, t.Any]:
+        return {
+            'type': 'context',
+            'block_id': 'alert-status',
+            'elements': [
+                {
+                    'type': 'mrkdwn',
+                    'text': f":sleeping: Snoozed at {now} UTC, for {period}",
+                }
+            ],
+        }

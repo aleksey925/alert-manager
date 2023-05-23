@@ -1,6 +1,4 @@
-import copy
 import typing as t
-from datetime import datetime
 from functools import wraps
 
 from slack_sdk.socket_mode.aiohttp import SocketModeClient
@@ -10,7 +8,7 @@ from slack_sdk.web.async_client import AsyncWebClient
 
 from alert_manager.services.alert_filter_backend import BaseAlertFilter
 from alert_manager.services.slack.exceptions import RuleUrlExtractError
-from alert_manager.services.slack.message import get_rule_url
+from alert_manager.services.slack.message import get_rule_url, MessageBuilder
 
 T = t.TypeVar('T')
 P = t.ParamSpec('P')
@@ -49,24 +47,10 @@ class Dispatcher:
     async def snooze_handler(
         self, *, client: SocketModeClient, request: SocketModeRequest, action: dict[str, t.Any]
     ) -> None:
-        period = action['selected_option']['text']['text']
-
-        new_blocks = copy.deepcopy(request.payload['message']['blocks'])
-        if new_blocks[-1].get('block_id') == 'alert-status':
-            new_blocks.pop()
-        if period != 'wake':
-            new_blocks.append(
-                {
-                    'type': 'context',
-                    'block_id': 'alert-status',
-                    'elements': [
-                        {
-                            'type': 'mrkdwn',
-                            'text': f":sleeping: Snoozed at {datetime.utcnow().strftime('%d %B %Y %H:%M:%S')} UTC, for {period}",
-                        }
-                    ],
-                }
-            )
+        blocks = MessageBuilder.add_alert_status_to_message(
+            message_blocks=request.payload['message']['blocks'],
+            action_data=action,
+        )
 
         rule_url = get_rule_url(request.payload['message']['blocks'])
         if not rule_url:
@@ -78,5 +62,5 @@ class Dispatcher:
         await self.slack_client.chat_update(
             channel=request.payload['channel']['id'],
             ts=request.payload['message']['ts'],
-            blocks=new_blocks,
+            blocks=blocks,
         )
