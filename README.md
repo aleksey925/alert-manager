@@ -23,6 +23,9 @@ There are two filter backends:
 The backend determines where information about muted alerts will be stored. In production,
 it is recommended to use the redis filter backend.
 
+> **Note:** Only [legacy grafana alerts](https://grafana.com/docs/grafana/latest/alerting/legacy-alerting-deprecation/) 
+> are currently supported.
+
 
 ## How to use
 
