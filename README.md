@@ -27,10 +27,10 @@ it is recommended to use the redis filter backend.
 ## How to use
 
 1. Deploy the alert-manager to your server.
-2. [Create](https://api.slack.com/apps) a Slack app and add it to your Slack workspace.
-3. Open the app settings and go to the "Features" -> "App Manifest" page. Copy the
-   manifest below, paste it into the text field, fill in values in the <> brackets, and
-   click "Save Changes".
+2. [Create](https://api.slack.com/apps) a Slack app.
+3. Enable Socket Mode in the app settings "Settings" -> "Socket Mode"
+4. Go to "Features" -> "App Manifest" page. Copy the manifest below, paste it into the 
+   text field, fill in values in the <> brackets, and click "Save Changes".
     ```yaml
     display_information:
       name: <GrafanaAlertBot>
@@ -45,14 +45,14 @@ it is recommended to use the redis filter backend.
     settings:
       interactivity:
         is_enabled: true
-        request_url: <alert-manager-host>/slack/interactive/
       org_deploy_enabled: false
-      socket_mode_enabled: false
+      socket_mode_enabled: true
       token_rotation_enabled: false
     ```
-4. Create a new Slack channel for alerts.
-5. Add your app to the channel.
-6. Create Notification Channel in Grafana with type "webhook" and url
+5. Install the app to your workspace.
+6. Create a new Slack channel for alerts.
+7. Add your app to the channel.
+8. Create Notification Channel in Grafana with type "webhook" and url
    `<alert-manager-host>/slack/webhook/?channel=<target-channel-name>`.
 
 
