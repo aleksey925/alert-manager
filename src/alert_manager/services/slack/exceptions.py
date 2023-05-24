@@ -1,0 +1,2 @@
+class RuleUrlExtractError(Exception):
+    pass

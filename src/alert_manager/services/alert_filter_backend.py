@@ -12,10 +12,6 @@ class BaseAlertFilter(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def wake(self, rule_url: str) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
     async def is_snoozed(self, rule_url: str) -> bool:
         raise NotImplementedError
 
@@ -26,11 +22,12 @@ class InMemoryAlertFilter(BaseAlertFilter):
         self._periodic_clean_task = periodic_task(self._clean_alerts, 120)
 
     async def snooze(self, rule_url: str, minutes: int) -> None:
-        self._snoozed_alerts[rule_url] = (datetime.now() + timedelta(minutes=minutes)).timestamp()
-
-    async def wake(self, rule_url: str) -> None:
-        if rule_url in self._snoozed_alerts:
-            del self._snoozed_alerts[rule_url]
+        if minutes == 0:
+            self._snoozed_alerts.pop(rule_url, '')
+        else:
+            self._snoozed_alerts[rule_url] = (
+                datetime.now() + timedelta(minutes=minutes)
+            ).timestamp()
 
     async def is_snoozed(self, rule_url: str) -> bool:
         if rule_url not in self._snoozed_alerts:
@@ -57,10 +54,10 @@ class RedisAlertFilter(BaseAlertFilter):
         self.redis = redis
 
     async def snooze(self, rule_url: str, minutes: int) -> None:
-        await self.redis.set(rule_url, '', ex=int(timedelta(minutes=minutes).total_seconds()))
-
-    async def wake(self, rule_url: str) -> None:
-        await self.redis.delete(rule_url)
+        if minutes == 0:
+            await self.redis.delete(rule_url)
+        else:
+            await self.redis.set(rule_url, '', ex=int(timedelta(minutes=minutes).total_seconds()))
 
     async def is_snoozed(self, rule_url: str) -> bool:
         return bool(await self.redis.exists(rule_url))
