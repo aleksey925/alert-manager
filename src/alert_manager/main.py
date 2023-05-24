@@ -18,9 +18,16 @@ from alert_manager.web.views import router
 
 
 async def startup_handler(app: web.Application, config: Config) -> None:
-    if app.get('redis'):
+    if config.filter_backend == FilterBackend.redis:
+        if config.redis_url is None:
+            raise ValueError('Redis url is not set')
+        app['redis'] = Redis.from_url(config.redis_url)
+        app['alert_filter'] = RedisAlertFilter(app['redis'])
         await app['redis'].ping()
+    else:
+        app['alert_filter'] = InMemoryAlertFilter()
 
+    app['slack_client'] = AsyncWebClient(token=config.slack_token)
     app['slack_socket_client'] = await create_slack_socket_client(
         app['slack_client'], t.cast(str, config.slack_socket_mode_token), app['alert_filter']
     )
@@ -38,15 +45,5 @@ def app_factory(config: Config) -> web.Application:
     app.on_startup.extend((deps_init, setup_swagger(), partial(startup_handler, config=config)))
     app.on_shutdown.append(shutdown_handler)
     app.add_routes(router)
-
-    if config.filter_backend == FilterBackend.redis:
-        if config.redis_url is None:
-            raise ValueError('Redis url is not set')
-        app['redis'] = Redis.from_url(config.redis_url)
-        app['alert_filter'] = RedisAlertFilter(app['redis'])
-    else:
-        app['alert_filter'] = InMemoryAlertFilter()
-
-    app['slack_client'] = AsyncWebClient(token=config.slack_token)
 
     return app

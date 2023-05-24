@@ -50,6 +50,9 @@ class MessageBuilder:
                 for match in eval_matches
             ],
         }
+        if not message_block['fields']:
+            message_block.pop('fields')
+
         snooze_time_select_block = {
             'type': 'actions',
             'elements': [
