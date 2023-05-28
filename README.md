@@ -13,6 +13,8 @@ Table of contents:
 
 ## How it works
 
+![how it works](docs/images/how-it-works.png)
+
 The alert-manager is a simple Slack bot (web application) that receives alert requests
 from Grafana, filters them if necessary, and sends them to Slack.
 
@@ -29,10 +31,10 @@ it is recommended to use the redis filter backend.
 
 ## How to use
 
-1. Deploy the alert-manager to your server.
+1. Deploy the `alert-manager` to your server.
 2. [Create](https://api.slack.com/apps) a Slack app.
-3. Enable Socket Mode in the app settings "Settings" -> "Socket Mode"
-4. Go to "Features" -> "App Manifest" page. Copy the manifest below, paste it into the
+3. Enable Socket Mode in the app settings `Settings` -> `Socket Mode`.
+4. Go to `Features` -> `App Manifest` page. Copy the manifest below, paste it into the
    text field, fill in values in the <> brackets, and click "Save Changes".
     ```yaml
     display_information:
@@ -55,8 +57,11 @@ it is recommended to use the redis filter backend.
 5. Install the app to your workspace.
 6. Create a new Slack channel for alerts.
 7. Add your app to the channel.
-8. Create Notification Channel in Grafana with type "webhook" and url
-   `<alert-manager-host>/slack/webhook/?channel=<target-channel-name>`.
+8. Create `Notification Channel` in Grafana with type `webhook` and url
+   `<alert-manager-host>/slack/webhook/?channel=<target-channel-name>`. 
+   Done! Now you can send a test alert by pressing the 'Test' button. In 
+   the Slack channel, you should see a message like this:
+   ![test alert](docs/images/alert-example.png)
 
 
 ## Deploy
