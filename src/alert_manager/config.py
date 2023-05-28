@@ -35,6 +35,10 @@ class Config(BaseSettings):
     log_level: LogLevel = LogLevel.info
     filter_backend: FilterBackend = Field(default=FilterBackend.in_memory)
 
+    # sentry
+    sentry_dsn: str | None
+    sentry_ca_certs: str | None
+
     # slack
     slack_token: str
     slack_socket_mode_token: str
