@@ -9,6 +9,7 @@ Table of contents:
 - [How it works](#how-it-works)
 - [How to use](#how-to-use)
 - [Deploy](#deploy)
+- [Monitoring](#monitoring)
 
 
 ## How it works
@@ -61,7 +62,9 @@ it is recommended to use the redis filter backend.
    `<alert-manager-host>/slack/webhook/?channel=<target-channel-name>`. 
    Done! Now you can send a test alert by pressing the 'Test' button. In 
    the Slack channel, you should see a message like this:
-   ![test alert](docs/images/alert-example.png)
+
+   <img alt="alert example 1" src="docs/images/alert-example-1.png" width="50%" height="20%">
+   <img alt="alert example 2" src="docs/images/alert-example-2.png" width="50%" height="20%">
 
 
 ## Deploy
@@ -75,3 +78,11 @@ it is recommended to use the redis filter backend.
    ```
    docker compose up
    ```
+
+## Monitoring
+
+Now there are two approaches to monitoring the alert-manager:
+
+- Sentry (If you have a Sentry instance, simply add the `SENTRY_DSN` environment 
+  variable. All available environment variables can be found in the `.env.example` file.)
+- `/health-check/` endpoint

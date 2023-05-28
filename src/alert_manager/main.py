@@ -45,11 +45,6 @@ async def shutdown_handler(app: web.Application) -> None:
 def app_factory(config: Config) -> web.Application:
     init_logger(log_format=config.log_format.value, log_level=config.log_level)
 
-    app = web.Application()
-    app.on_startup.extend((deps_init, setup_swagger(), partial(startup_handler, config=config)))
-    app.on_shutdown.append(shutdown_handler)
-    app.add_routes(router)
-
     if config.sentry_dsn:
         sentry_sdk.init(
             dsn=config.sentry_dsn,
@@ -57,5 +52,10 @@ def app_factory(config: Config) -> web.Application:
             send_default_pii=True,
             ca_certs=config.sentry_ca_certs,
         )
+
+    app = web.Application()
+    app.on_startup.extend((deps_init, setup_swagger(), partial(startup_handler, config=config)))
+    app.on_shutdown.append(shutdown_handler)
+    app.add_routes(router)
 
     return app
