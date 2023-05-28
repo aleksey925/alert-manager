@@ -1,10 +1,13 @@
 import typing as t
 from functools import partial
 
+import sentry_sdk
 from aiohttp import web
 from aiohttp_deps import init as deps_init
 from aiohttp_deps import setup_swagger
 from redis.asyncio.client import Redis
+from sentry_sdk.integrations.aiohttp import AioHttpIntegration
+from sentry_sdk.integrations.asyncio import AsyncioIntegration
 from slack_sdk.web.async_client import AsyncWebClient
 
 from alert_manager.bot.app import create_client as create_slack_socket_client
@@ -34,12 +37,21 @@ async def startup_handler(app: web.Application, config: Config) -> None:
 
 
 async def shutdown_handler(app: web.Application) -> None:
-    await app['redis'].close()
+    if redis := app.get('redis'):
+        await redis.close()
     await app['slack_socket_client'].close()
 
 
 def app_factory(config: Config) -> web.Application:
     init_logger(log_format=config.log_format.value, log_level=config.log_level)
+
+    if config.sentry_dsn:
+        sentry_sdk.init(
+            dsn=config.sentry_dsn,
+            integrations=[AsyncioIntegration(), AioHttpIntegration()],
+            send_default_pii=True,
+            ca_certs=config.sentry_ca_certs,
+        )
 
     app = web.Application()
     app.on_startup.extend((deps_init, setup_swagger(), partial(startup_handler, config=config)))

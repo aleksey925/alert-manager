@@ -9,9 +9,12 @@ Table of contents:
 - [How it works](#how-it-works)
 - [How to use](#how-to-use)
 - [Deploy](#deploy)
+- [Monitoring](#monitoring)
 
 
 ## How it works
+
+![how it works](docs/images/how-it-works.png)
 
 The alert-manager is a simple Slack bot (web application) that receives alert requests
 from Grafana, filters them if necessary, and sends them to Slack.
@@ -29,10 +32,10 @@ it is recommended to use the redis filter backend.
 
 ## How to use
 
-1. Deploy the alert-manager to your server.
+1. Deploy the `alert-manager` to your server.
 2. [Create](https://api.slack.com/apps) a Slack app.
-3. Enable Socket Mode in the app settings "Settings" -> "Socket Mode"
-4. Go to "Features" -> "App Manifest" page. Copy the manifest below, paste it into the
+3. Enable Socket Mode in the app settings `Settings` -> `Socket Mode`.
+4. Go to `Features` -> `App Manifest` page. Copy the manifest below, paste it into the
    text field, fill in values in the <> brackets, and click "Save Changes".
     ```yaml
     display_information:
@@ -55,8 +58,13 @@ it is recommended to use the redis filter backend.
 5. Install the app to your workspace.
 6. Create a new Slack channel for alerts.
 7. Add your app to the channel.
-8. Create Notification Channel in Grafana with type "webhook" and url
-   `<alert-manager-host>/slack/webhook/?channel=<target-channel-name>`.
+8. Create `Notification Channel` in Grafana with type `webhook` and url
+   `<alert-manager-host>/slack/webhook/?channel=<target-channel-name>`. 
+   Done! Now you can send a test alert by pressing the 'Test' button. In 
+   the Slack channel, you should see a message like this:
+
+   <img alt="alert example 1" src="docs/images/alert-example-1.png" width="50%" height="20%">
+   <img alt="alert example 2" src="docs/images/alert-example-2.png" width="50%" height="20%">
 
 
 ## Deploy
@@ -70,3 +78,11 @@ it is recommended to use the redis filter backend.
    ```
    docker compose up
    ```
+
+## Monitoring
+
+Now there are two approaches to monitoring the alert-manager:
+
+- Sentry (If you have a Sentry instance, simply add the `SENTRY_DSN` environment 
+  variable. All available environment variables can be found in the `.env.example` file.)
+- `/health-check/` endpoint
