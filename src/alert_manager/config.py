@@ -1,11 +1,18 @@
 from __future__ import annotations
 
+import os
 import typing as t
 from enum import Enum
 from pathlib import Path
 
 from pydantic import Field, Json, validator
-from pydantic.env_settings import BaseSettings
+from pydantic.env_settings import (
+    BaseSettings,
+    EnvSettingsSource,
+    InitSettingsSource,
+    SecretsSettingsSource,
+)
+from pydantic_vault import vault_config_settings_source
 
 _inst: dict[str, Config] = {}
 project_dir: Path = Path(__file__).absolute().parent.parent.parent
@@ -30,23 +37,30 @@ class FilterBackend(Enum):
     redis = 'redis'
 
 
+VAULT_SECRET_PATH = os.environ.get('VAULT_SECRET_PATH')
+
+
 class Config(BaseSettings):
     # app
     log_format: LogMode = LogMode.simple
     log_level: LogLevel = LogLevel.info
     filter_backend: FilterBackend = Field(default=FilterBackend.in_memory)
-    accounts_: Json[t.Any] | None = Field(env='ACCOUNTS')
+    accounts_: Json[t.Any] | None = Field(
+        env='ACCOUNTS', vault_secret_path=VAULT_SECRET_PATH, vault_secret_key='accounts'
+    )
 
     # sentry
     sentry_dsn: str | None
     sentry_ca_certs: str | None
 
     # slack
-    slack_token: str
-    slack_socket_mode_token: str
+    slack_token: str = Field(vault_secret_path=VAULT_SECRET_PATH, vault_secret_key='slack_token')
+    slack_socket_mode_token: str = Field(
+        vault_secret_path=VAULT_SECRET_PATH, vault_secret_key='slack_socket_mode_token'
+    )
 
     # redis
-    redis_url: str | None
+    redis_url: str | None = Field(vault_secret_path=VAULT_SECRET_PATH, vault_secret_key='redis_url')
 
     @validator('accounts_')
     def accounts_validator(
@@ -68,6 +82,19 @@ class Config(BaseSettings):
 
     class Config:
         env_file = project_dir / '.env'
+
+        @classmethod
+        def customise_sources(
+            cls,
+            init_settings: InitSettingsSource,
+            env_settings: EnvSettingsSource,
+            file_secret_settings: SecretsSettingsSource,
+        ) -> tuple[t.Callable[[BaseSettings], dict[str, t.Any]], ...]:
+            return (
+                init_settings,
+                env_settings,
+                vault_config_settings_source,
+            )
 
 
 def get_config() -> Config:

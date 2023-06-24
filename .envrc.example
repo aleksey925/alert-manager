@@ -1,2 +1,2 @@
-layout pyenv 3.8.13
+layout pyenv 3.11.2
 dotenv

@@ -8,8 +8,9 @@ Table of contents:
 
 - [How it works](#how-it-works)
 - [How to use](#how-to-use)
+  - [Vault](#vault)
+  - [Monitoring](#monitoring)
 - [Deploy](#deploy)
-- [Monitoring](#monitoring)
 
 
 ## How it works
@@ -67,6 +68,38 @@ it is recommended to use the redis filter backend.
    <img alt="alert example 2" src="docs/images/alert-example-2.png" width="50%" height="20%">
 
 
+### Vault
+
+Alert-manager supports storage integration by default. You can enable this
+feature through the following environment variables (If you want to use other authentication
+methods, you need to use the appropriate environment variables. This example shows the
+configuration for authorization using vault token.):
+
+- `VAULT_ADDR` is the url of the vault. Example: `http://127.0.0.1:8200`
+- `VAULT_TOKEN` is token for accessing to vault. Example: `s.1234567890`
+- `VAULT_SECRET_PATH` is the full path (with mount point included) to the secret. Example: `secret/data/alert-manager`
+
+[Here](https://github.com/nymous/pydantic-vault#authentication) you can find all
+possible authorization methods.
+
+The application allows you to store the following settings in vault (the name of
+these settings corresponds to the name of the key in the secret of the vault):
+
+- accounts
+- slack_token
+- slack_socket_mode_token
+- redis_url
+
+
+### Monitoring
+
+Now there are two approaches to monitoring the alert-manager:
+
+- Sentry (If you have a Sentry instance, simply add the `SENTRY_DSN` environment
+  variable. All available environment variables can be found in the `.env.example` file.)
+- `/health-check/` endpoint
+
+
 ## Deploy
 
 **docker-compose**
@@ -78,11 +111,3 @@ it is recommended to use the redis filter backend.
    ```
    docker compose up
    ```
-
-## Monitoring
-
-Now there are two approaches to monitoring the alert-manager:
-
-- Sentry (If you have a Sentry instance, simply add the `SENTRY_DSN` environment
-  variable. All available environment variables can be found in the `.env.example` file.)
-- `/health-check/` endpoint
