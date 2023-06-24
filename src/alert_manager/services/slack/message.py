@@ -20,7 +20,7 @@ def get_rule_url(message_blocks: MsgBlocksType) -> str:
 
 
 class MessageBuilder:
-    status_emoji = {
+    status_emoji: t.ClassVar[dict[GrafanaAlertState, str]] = {
         GrafanaAlertState.ok: ':large_green_circle:',
         GrafanaAlertState.alerting: ':red_circle:',
         GrafanaAlertState.no_data: ':white_circle:',
@@ -42,7 +42,7 @@ class MessageBuilder:
             'block_id': f'title|{rule_url}',
             'text': {'type': 'mrkdwn', 'text': f'{status_emoji}<{rule_url}|*{title}*>'},
         }
-        message_block = {
+        message_block: dict[str, t.Any] = {
             'type': 'section',
             'text': {'type': 'mrkdwn', 'text': message},
             'fields': [
@@ -50,6 +50,8 @@ class MessageBuilder:
                 for match in eval_matches
             ],
         }
+        if not message_block['text']['text']:
+            message_block.pop('text')
         if not message_block['fields']:
             message_block.pop('fields')
 
