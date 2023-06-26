@@ -45,6 +45,7 @@ class Config(BaseSettings):
     log_format: LogMode = LogMode.simple
     log_level: LogLevel = LogLevel.info
     filter_backend: FilterBackend = Field(default=FilterBackend.in_memory)
+    router_prefix: str = Field(default='')
     accounts_: Json[t.Any] | None = Field(
         env='ACCOUNTS', vault_secret_path=VAULT_SECRET_PATH, vault_secret_key='accounts'
     )

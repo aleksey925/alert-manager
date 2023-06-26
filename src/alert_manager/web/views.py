@@ -14,7 +14,7 @@ router = Router()
 config = get_config()
 
 
-@router.post('/webhook/grafana/')
+@router.post(f'{config.router_prefix}/webhook/grafana/')
 async def grafana_alert_view(
     channel: str = Depends(Query()),
     payload: GrafanaAlertRequest = Depends(Json()),
@@ -43,6 +43,6 @@ async def grafana_alert_view(
     return web.Response()
 
 
-@router.get('/health-check/')
+@router.get(f'{config.router_prefix}/health-check/')
 async def health_check_view() -> web.Response:
     return web.json_response({'status': 'ok'})
