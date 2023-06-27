@@ -32,11 +32,18 @@ class LogLevel(Enum):
     notset = 'notset'
 
 
+class LogTimestampFmt(Enum):
+    unix = 'unix'
+    unix_ms = 'unix_ms'
+    iso = 'iso'
+
+
 class FilterBackend(Enum):
     in_memory = 'in_memory'
     redis = 'redis'
 
 
+VAULT_ADDR = os.environ.get('VAULT_ADDR')
 VAULT_SECRET_PATH = os.environ.get('VAULT_SECRET_PATH')
 
 
@@ -44,8 +51,9 @@ class Config(BaseSettings):
     # app
     log_format: LogMode = LogMode.simple
     log_level: LogLevel = LogLevel.info
+    log_timestamp_format: LogTimestampFmt = LogTimestampFmt.iso
     filter_backend: FilterBackend = Field(default=FilterBackend.in_memory)
-    router_prefix: str = Field(default='')
+    router_prefix: str = ''
     accounts_: Json[t.Any] | None = Field(
         env='ACCOUNTS', vault_secret_path=VAULT_SECRET_PATH, vault_secret_key='accounts'
     )
@@ -62,6 +70,15 @@ class Config(BaseSettings):
 
     # redis
     redis_url: str | None = Field(vault_secret_path=VAULT_SECRET_PATH, vault_secret_key='redis_url')
+
+    @validator('router_prefix')
+    def router_prefix_validator(cls, value: str, **kwargs: t.Any) -> str:  # noqa: N805
+        if value:
+            if not value.startswith('/'):
+                raise ValueError('Must start with /')
+            if value.endswith('/'):
+                raise ValueError('Must not end with /')
+        return value
 
     @validator('accounts_')
     def accounts_validator(
@@ -91,11 +108,10 @@ class Config(BaseSettings):
             env_settings: EnvSettingsSource,
             file_secret_settings: SecretsSettingsSource,
         ) -> tuple[t.Callable[[BaseSettings], dict[str, t.Any]], ...]:
-            return (
-                init_settings,
-                env_settings,
-                vault_config_settings_source,
-            )
+            optional_sources = []
+            if VAULT_ADDR:
+                optional_sources.append(vault_config_settings_source)
+            return init_settings, env_settings, *optional_sources
 
 
 def get_config() -> Config:
