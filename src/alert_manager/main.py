@@ -43,7 +43,11 @@ async def shutdown_handler(app: web.Application) -> None:
 
 
 def app_factory(config: Config) -> web.Application:
-    init_logger(log_format=config.log_format.value, log_level=config.log_level)
+    init_logger(
+        log_format=config.log_format.value,
+        log_level=config.log_level.value,
+        log_timestamp_format=config.log_timestamp_format.value,
+    )
 
     if config.sentry_dsn:
         sentry_sdk.init(
