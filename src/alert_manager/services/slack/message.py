@@ -3,6 +3,8 @@ import typing as t
 from datetime import datetime
 from typing import Any
 
+from slack_sdk.socket_mode.request import SocketModeRequest
+
 from alert_manager.enums.grafana import GrafanaAlertState
 from alert_manager.web.entities.grafana import EvalMatch
 
@@ -96,7 +98,10 @@ class MessageBuilder:
 
     @classmethod
     def add_alert_status_to_message(
-        cls, message_blocks: MsgBlocksType, action_data: dict[str, t.Any]
+        cls,
+        message_blocks: MsgBlocksType,
+        action_data: dict[str, t.Any],
+        snoozed_by: str,
     ) -> MsgBlocksType:
         message_blocks = copy.deepcopy(message_blocks)
 
@@ -107,20 +112,24 @@ class MessageBuilder:
             message_blocks.pop()
         if period != 'wake':
             message_blocks.append(
-                cls._generate_alert_status_block(now=now, period=period),
+                cls._generate_alert_status_block(now=now, period=period, profile_link=snoozed_by)
             )
 
         return message_blocks
 
     @staticmethod
-    def _generate_alert_status_block(now: str, period: str) -> dict[str, t.Any]:
+    def _generate_alert_status_block(now: str, period: str, profile_link: str) -> dict[str, t.Any]:
         return {
             'type': 'context',
             'block_id': 'alert-status',
             'elements': [
                 {
                     'type': 'mrkdwn',
-                    'text': f':sleeping: Snoozed at {now} UTC, for {period}',
+                    'text': f':sleeping: Snoozed at {now} UTC, for {period}, snoozed by <{profile_link}|user>',
                 }
             ],
         }
+
+    @classmethod
+    def create_user_link(cls, request: SocketModeRequest) -> str:
+        return f'https://{request.payload["team"]["domain"]}.slack.com/team/{request.payload["user"]["id"]}'
