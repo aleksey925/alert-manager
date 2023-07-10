@@ -3,6 +3,7 @@ import typing as t
 from datetime import datetime
 from typing import Any
 
+from alert_manager.entities.alert_metadata import AlertMetadata
 from alert_manager.enums.grafana import GrafanaAlertState
 from alert_manager.web.entities.grafana import EvalMatch
 
@@ -25,6 +26,7 @@ class MessageBuilder:
         GrafanaAlertState.alerting: ':red_circle:',
         GrafanaAlertState.no_data: ':white_circle:',
     }
+    alerts_not_found_text = "There aren't any snoozed alerts."
 
     @classmethod
     def create_alert_message(
@@ -127,3 +129,48 @@ class MessageBuilder:
                 }
             ],
         }
+
+    @classmethod
+    def create_list_snoozed_alerts(
+        cls, snoozed_alerts: dict[str, AlertMetadata]
+    ) -> tuple[str, MsgBlocksType]:
+        msg_title = ':sleeping: Snoozed alerts:'
+        if not snoozed_alerts:
+            msg_title = cls.alerts_not_found_text
+
+        blocks: MsgBlocksType = [
+            {
+                'type': 'section',
+                'fields': [{'type': 'mrkdwn', 'text': f'*{msg_title}*'}],
+            }
+        ]
+        for key, metadata in snoozed_alerts.items():
+            snoozed_alert_block = {
+                'type': 'section',
+                'text': {
+                    'type': 'mrkdwn',
+                    'text': (
+                        f'- <{metadata.rule_url}|{metadata.title}>, '
+                        f'snoozed until {datetime.utcfromtimestamp(metadata.snoozed_until)} UTC'
+                    ),
+                },
+                'accessory': {
+                    'type': 'button',
+                    'text': {'type': 'plain_text', 'text': ':bell: Wake Up', 'emoji': True},
+                    'value': key,
+                    'action_id': 'wake-up',
+                },
+            }
+            blocks.append(snoozed_alert_block)
+
+        return msg_title, blocks
+
+    @classmethod
+    def remove_woke_alert(cls, message_blocks: MsgBlocksType, alert_key: str) -> MsgBlocksType:
+        blocks = [
+            message_blocks[0],
+            *[alert for alert in message_blocks[1:] if alert['accessory']['value'] != alert_key],
+        ]
+        if len(blocks) == 1:
+            blocks[0]['fields'][0]['text'] = f'*{cls.alerts_not_found_text}*'
+        return blocks

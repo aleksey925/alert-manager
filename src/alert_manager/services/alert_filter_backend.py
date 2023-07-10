@@ -3,49 +3,81 @@ from datetime import datetime, timedelta
 
 from redis.asyncio import Redis
 
+from alert_manager.entities.alert_metadata import AlertMetadata
 from alert_manager.libs.asyncio_utils import periodic_task
 
 
 class BaseAlertFilter(ABC):
-    @abstractmethod
-    async def snooze(self, rule_url: str, minutes: int) -> None:
-        raise NotImplementedError
+    def create_key(self, channel_name: str, rule_url: str) -> str:
+        return f'{channel_name};{rule_url}'
 
     @abstractmethod
-    async def is_snoozed(self, rule_url: str) -> bool:
-        raise NotImplementedError
+    async def snooze(
+        self, channel_name: str, title: str, rule_url: str, snoozed_by: str, minutes: int
+    ) -> None:
+        raise NotImplementedError  # pragma: no cover
+
+    async def wake_up(self, key: str) -> None:
+        raise NotImplementedError  # pragma: no cover
+
+    @abstractmethod
+    async def is_snoozed(self, channel_name: str, rule_url: str) -> bool:
+        raise NotImplementedError  # pragma: no cover
+
+    @abstractmethod
+    async def get_all(self, channel_name: str) -> dict[str, AlertMetadata]:
+        raise NotImplementedError  # pragma: no cover
 
 
 class InMemoryAlertFilter(BaseAlertFilter):
     def __init__(self) -> None:
-        self._snoozed_alerts: dict[str, int | float] = {}
+        self._snoozed_alerts: dict[str, AlertMetadata] = {}
         self._periodic_clean_task = periodic_task(self._clean_alerts, 120)
 
-    async def snooze(self, rule_url: str, minutes: int) -> None:
+    async def snooze(
+        self, channel_name: str, title: str, rule_url: str, snoozed_by: str, minutes: int
+    ) -> None:
+        key = self.create_key(channel_name, rule_url)
         if minutes == 0:
-            self._snoozed_alerts.pop(rule_url, '')
+            await self.wake_up(key)
         else:
-            self._snoozed_alerts[rule_url] = (
-                datetime.now() + timedelta(minutes=minutes)
-            ).timestamp()
+            self._snoozed_alerts[key] = AlertMetadata(
+                title=title,
+                rule_url=rule_url,
+                snoozed_by=snoozed_by,
+                snoozed_until=(datetime.now() + timedelta(minutes=minutes)).timestamp(),
+                channel_name=channel_name,
+            )
 
-    async def is_snoozed(self, rule_url: str) -> bool:
-        if rule_url not in self._snoozed_alerts:
+    async def wake_up(self, key: str) -> None:
+        self._snoozed_alerts.pop(key, '')
+
+    async def is_snoozed(self, channel_name: str, rule_url: str) -> bool:
+        key = self.create_key(channel_name, rule_url)
+
+        if key not in self._snoozed_alerts:
             return False
 
-        if self._snoozed_alerts[rule_url] > datetime.now().timestamp():
+        if self._snoozed_alerts[key].snoozed_until > datetime.now().timestamp():
             return True
         else:
-            del self._snoozed_alerts[rule_url]
+            del self._snoozed_alerts[key]
 
         return False
 
     async def _clean_alerts(self) -> None:
         current_timestamp = datetime.now().timestamp()
         self._snoozed_alerts = {
-            url: timestamp
-            for url, timestamp in self._snoozed_alerts.items()
-            if timestamp > current_timestamp
+            key: metadata
+            for key, metadata in self._snoozed_alerts.items()
+            if metadata.snoozed_until > current_timestamp
+        }
+
+    async def get_all(self, channel_name: str) -> dict[str, AlertMetadata]:
+        return {
+            key: metadata
+            for key, metadata in self._snoozed_alerts.items()
+            if metadata.channel_name == channel_name
         }
 
 
@@ -53,11 +85,35 @@ class RedisAlertFilter(BaseAlertFilter):
     def __init__(self, redis: Redis) -> None:  # type: ignore[type-arg]
         self.redis = redis
 
-    async def snooze(self, rule_url: str, minutes: int) -> None:
+    async def snooze(
+        self, channel_name: str, title: str, rule_url: str, snoozed_by: str, minutes: int
+    ) -> None:
+        key = self.create_key(channel_name, rule_url)
         if minutes == 0:
-            await self.redis.delete(rule_url)
+            await self.wake_up(key)
         else:
-            await self.redis.set(rule_url, '', ex=int(timedelta(minutes=minutes).total_seconds()))
+            metadata = AlertMetadata(
+                title=title,
+                rule_url=rule_url,
+                snoozed_by=snoozed_by,
+                snoozed_until=(datetime.now() + timedelta(minutes=minutes)).timestamp(),
+                channel_name=channel_name,
+            )
+            await self.redis.set(
+                key, metadata.json(), ex=int(timedelta(minutes=minutes).total_seconds())
+            )
 
-    async def is_snoozed(self, rule_url: str) -> bool:
-        return bool(await self.redis.exists(rule_url))
+    async def wake_up(self, key: str) -> None:
+        await self.redis.delete(key)
+
+    async def is_snoozed(self, channel_name: str, rule_url: str) -> bool:
+        key = self.create_key(channel_name, rule_url)
+        return bool(await self.redis.exists(key))
+
+    async def get_all(self, channel_name: str) -> dict[str, AlertMetadata]:
+        keys = [i.decode() for i in await self.redis.keys(f'{channel_name};*')]
+        return {
+            key: AlertMetadata.parse_raw(raw_metadata)
+            for key, raw_metadata in zip(keys, await self.redis.mget(keys), strict=True)
+            if raw_metadata
+        }
