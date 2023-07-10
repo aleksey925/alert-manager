@@ -25,7 +25,7 @@ async def grafana_alert_view(
     Accepts and processes alerts from grafana.
     """
     alert_filter: BaseAlertFilter = request.app['alert_filter']
-    if await alert_filter.is_snoozed(payload.rule_url):
+    if await alert_filter.is_snoozed(channel, payload.rule_url):
         return web.Response()
 
     text, blocks = MessageBuilder.create_alert_message(

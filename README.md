@@ -1,3 +1,5 @@
+![license](https://img.shields.io/github/license/aleksey925/alert-manager?style=for-the-badge) [![version](https://img.shields.io/github/v/release/aleksey925/alert-manager?display_name=tag&style=for-the-badge)](https://github.com/aleksey925/alert-manager/pkgs/container/runtime-config) [![build status](https://img.shields.io/github/actions/workflow/status/aleksey925/alert-manager/release.yml?style=for-the-badge)](https://github.com/aleksey925/alert-manager/actions/workflows/release.yml)
+
 alert-manager
 =============
 
@@ -45,10 +47,16 @@ it is recommended to use the redis filter backend.
       bot_user:
         display_name: <GrafanaAlertBot>
         always_online: false
+      slash_commands:
+        - command: /get-snoozed-alerts
+          description: Returns a list of snoozed alerts
+          should_escape: false
     oauth_config:
       scopes:
         bot:
           - chat:write
+          - commands
+          - incoming-webhook
     settings:
       interactivity:
         is_enabled: true
@@ -66,6 +74,8 @@ it is recommended to use the redis filter backend.
 
    <img alt="alert example 1" src="docs/images/alert-example-1.png" width="50%" height="20%">
    <img alt="alert example 2" src="docs/images/alert-example-2.png" width="50%" height="20%">
+   <img alt="alert example 2" src="docs/images/alert-example-3.png" width="50%" height="20%">
+   <img alt="alert example 2" src="docs/images/alert-example-4.png" width="50%" height="20%">
 
 
 ### Vault
