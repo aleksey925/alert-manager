@@ -3,8 +3,6 @@ import typing as t
 from datetime import datetime
 from typing import Any
 
-from slack_sdk.socket_mode.request import SocketModeRequest
-
 from alert_manager.enums.grafana import GrafanaAlertState
 from alert_manager.web.entities.grafana import EvalMatch
 
@@ -112,24 +110,20 @@ class MessageBuilder:
             message_blocks.pop()
         if period != 'wake':
             message_blocks.append(
-                cls._generate_alert_status_block(now=now, period=period, profile_link=snoozed_by)
+                cls._generate_alert_status_block(now=now, period=period, username=snoozed_by)
             )
 
         return message_blocks
 
     @staticmethod
-    def _generate_alert_status_block(now: str, period: str, profile_link: str) -> dict[str, t.Any]:
+    def _generate_alert_status_block(now: str, period: str, username: str) -> dict[str, t.Any]:
         return {
             'type': 'context',
             'block_id': 'alert-status',
             'elements': [
                 {
                     'type': 'mrkdwn',
-                    'text': f':sleeping: Snoozed at {now} UTC, for {period}, snoozed by <{profile_link}|user>',
+                    'text': f':sleeping: Snoozed at {now} UTC, for {period}, snoozed by @{username}',
                 }
             ],
         }
-
-    @classmethod
-    def create_user_link(cls, request: SocketModeRequest) -> str:
-        return f'https://{request.payload["team"]["domain"]}.slack.com/team/{request.payload["user"]["id"]}'
