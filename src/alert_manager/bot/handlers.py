@@ -51,7 +51,7 @@ class Dispatcher:
         blocks = MessageBuilder.add_alert_status_to_message(
             message_blocks=request.payload['message']['blocks'],
             action_data=action,
-            snoozed_by=MessageBuilder.create_user_link(request),
+            snoozed_by=request.payload['user']['username'],
         )
 
         rule_url = get_rule_url(request.payload['message']['blocks'])
