@@ -1,4 +1,4 @@
-![license](https://img.shields.io/github/license/aleksey925/alert-manager?style=for-the-badge) [![version](https://img.shields.io/github/v/release/aleksey925/alert-manager?display_name=tag&style=for-the-badge)](https://github.com/aleksey925/alert-manager/pkgs/container/runtime-config) [![build status](https://img.shields.io/github/actions/workflow/status/aleksey925/alert-manager/release.yml?style=for-the-badge)](https://github.com/aleksey925/alert-manager/actions/workflows/release.yml)
+![license](https://img.shields.io/github/license/aleksey925/alert-manager?style=for-the-badge) [![version](https://img.shields.io/github/v/release/aleksey925/alert-manager?display_name=tag&style=for-the-badge)](https://github.com/aleksey925/alert-manager/pkgs/container/alert-manager) [![build status](https://img.shields.io/github/actions/workflow/status/aleksey925/alert-manager/release.yml?style=for-the-badge)](https://github.com/aleksey925/alert-manager/actions/workflows/release.yml)
 
 alert-manager
 =============
