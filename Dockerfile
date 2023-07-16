@@ -1,6 +1,6 @@
 FROM python:3.11-slim-buster
 
-ENV PDM_VERSION=2.4.9
+ENV PDM_VERSION=2.7.4
 WORKDIR /opt/app/
 
 RUN pip install pdm==$PDM_VERSION

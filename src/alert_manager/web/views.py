@@ -3,7 +3,6 @@ import logging
 from aiohttp import web
 from aiohttp_deps import Depends, Json, Query, Router
 
-from alert_manager.config import get_config
 from alert_manager.libs.security import require_user
 from alert_manager.services.alert_filter_backend import BaseAlertFilter
 from alert_manager.services.slack.message import MessageBuilder
@@ -11,15 +10,14 @@ from alert_manager.web.entities.grafana import GrafanaAlertRequest
 
 logger = logging.getLogger(__name__)
 router = Router()
-config = get_config()
 
 
-@router.post(f'{config.router_prefix}/webhook/grafana/')
+@router.post('/webhook/grafana/')
 async def grafana_alert_view(
     channel: str = Depends(Query()),
     payload: GrafanaAlertRequest = Depends(Json()),
     request: web.Request = Depends(),
-    _: str | None = Depends(require_user, kwargs={'accounts': config.accounts}),
+    _: str | None = Depends(require_user),
 ) -> web.Response:
     """
     Accepts and processes alerts from grafana.
@@ -43,6 +41,6 @@ async def grafana_alert_view(
     return web.Response()
 
 
-@router.get(f'{config.router_prefix}/health-check/')
+@router.get('/health-check/')
 async def health_check_view() -> web.Response:
     return web.json_response({'status': 'ok'})
