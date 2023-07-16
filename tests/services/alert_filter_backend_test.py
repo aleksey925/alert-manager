@@ -6,7 +6,6 @@ from alert_manager.services.alert_filter_backend import (
     InMemoryAlertFilter,
     RedisAlertFilter,
 )
-from fakeredis import aioredis
 from freezegun import freeze_time
 
 
@@ -134,7 +133,7 @@ class TestInMemoryAlertFilter:
 
 @freeze_time('2023-07-11')
 class TestRedisAlertFilter:
-    async def test_snooze(self, fake_redis, alert_filter, alert_metadata, alert_key):
+    async def test_snooze(self, redis, alert_filter, alert_metadata, alert_key):
         # arrange
         minutes = int((alert_metadata.snoozed_until - datetime.now().timestamp()) / 60)
 
@@ -148,12 +147,12 @@ class TestRedisAlertFilter:
         )
 
         # assert
-        alerts = await fake_redis.mget(alert_key)
+        alerts = await redis.mget(alert_key)
         assert len(alerts) == 1
         assert AlertMetadata.parse_raw(alerts[0]) == alert_metadata
 
     async def test_snooze__snooze_to_zero_minutes__alert_deleted_from_inner_storage(
-        self, fake_redis, alert_filter, alert_metadata, alert_key
+        self, redis, alert_filter, alert_metadata, alert_key
     ):
         # arrange
         await alert_filter.snooze(
@@ -174,7 +173,7 @@ class TestRedisAlertFilter:
         )
 
         # assert
-        alerts = await fake_redis.mget(alert_key)
+        alerts = await redis.mget(alert_key)
         assert alerts == [None]
         assert (
             await alert_filter.is_snoozed(
@@ -266,25 +265,9 @@ class TestRedisAlertFilter:
         # assert
         assert alerts == {}
 
-    @pytest.fixture
-    def fake_redis(self):
-        return aioredis.FakeRedis(version=(6,))
-
     @pytest.fixture(name='alert_filter', autouse=True)
-    async def alert_filter_fixture(self, fake_redis):
-        return RedisAlertFilter(fake_redis)
-
-
-@pytest.fixture(name='alert_metadata')
-@freeze_time('2023-07-11')
-def alert_metadata_fixture():
-    return AlertMetadata(
-        channel_name='channel1',
-        title='[Alerting] Alert title',
-        snoozed_by='user_nick',
-        snoozed_until=(datetime.now() + timedelta(minutes=10)).timestamp(),
-        rule_url='rule1',
-    )
+    async def alert_filter_fixture(self, redis):
+        return RedisAlertFilter(redis)
 
 
 @pytest.fixture(name='alert_key')

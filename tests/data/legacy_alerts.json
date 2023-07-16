@@ -1,0 +1,52 @@
+{
+   "alerting": {
+      "title": "[Alerting] High load on the site",
+      "ruleId": 1,
+      "ruleName": "High load on the site",
+      "state": "alerting",
+      "evalMatches": [
+         {
+            "value": 3,
+            "metric": "index",
+            "tags": {
+               "__name__": "my_app_open_page_total",
+               "instance": "app:8000",
+               "job": "my_app",
+               "name": "index"
+            }
+         }
+      ],
+      "orgId": 1,
+      "dashboardId": 1,
+      "panelId": 2,
+      "tags": {},
+      "ruleUrl": "http://localhost:3000/d/qO8_77w4k/new-dashboard?tab=alert&viewPanel=2&orgId=1",
+      "message": "message"
+   },
+   "ok": {
+      "title": "[OK] High load on the site",
+      "ruleId": 1,
+      "ruleName": "High load on the site",
+      "state": "ok",
+      "evalMatches": [],
+      "orgId": 1,
+      "dashboardId": 1,
+      "panelId": 2,
+      "tags": {},
+      "ruleUrl": "http://localhost:3000/d/qO8_77w4k/new-dashboard?tab=alert&viewPanel=2&orgId=1",
+      "message": "message"
+   },
+   "no_data": {
+      "title": "[No Data] High load on the site",
+      "ruleId": 1,
+      "ruleName": "High load on the site",
+      "state": "no_data",
+      "evalMatches": [],
+      "orgId": 1,
+      "dashboardId": 1,
+      "panelId": 2,
+      "tags": {},
+      "ruleUrl": "http://localhost:3000/d/qO8_77w4k/new-dashboard?tab=alert&viewPanel=2&orgId=1",
+      "message": "message"
+   }
+}

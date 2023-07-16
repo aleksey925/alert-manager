@@ -3,8 +3,8 @@ from functools import partial
 
 import sentry_sdk
 from aiohttp import web
+from aiohttp_deps import Router, setup_swagger
 from aiohttp_deps import init as deps_init
-from aiohttp_deps import setup_swagger
 from redis.asyncio.client import Redis
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 from sentry_sdk.integrations.asyncio import AsyncioIntegration
@@ -12,6 +12,7 @@ from slack_sdk.web.async_client import AsyncWebClient
 
 from alert_manager.bot.app import create_client as create_slack_socket_client
 from alert_manager.config import Config, FilterBackend
+from alert_manager.libs.security import accounts_dep
 from alert_manager.logger import init_logger
 from alert_manager.services.alert_filter_backend import (
     InMemoryAlertFilter,
@@ -57,9 +58,14 @@ def app_factory(config: Config) -> web.Application:
             ca_certs=config.sentry_ca_certs,
         )
 
+    main_router = Router()
+    main_router.add_routes(router, prefix=config.router_prefix)
+
     app = web.Application()
     app.on_startup.extend((deps_init, setup_swagger(), partial(startup_handler, config=config)))
     app.on_shutdown.append(shutdown_handler)
-    app.add_routes(router)
+    app.add_routes(main_router)
+
+    app['dependency_overrides'] = {accounts_dep: config.accounts}
 
     return app

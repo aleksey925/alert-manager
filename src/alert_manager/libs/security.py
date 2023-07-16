@@ -2,10 +2,14 @@ from aiohttp import BasicAuth, hdrs, web
 from taskiq_dependencies import Depends
 
 
+def accounts_dep() -> None:
+    return None
+
+
 def require_user(
-    accounts: dict[str, str] | None = None, request: web.Request = Depends()
+    accounts: dict[str, str] | None = Depends(accounts_dep), request: web.Request = Depends()
 ) -> str | None:
-    if accounts is None:
+    if not accounts:
         return None
 
     auth_header = request.headers.get(hdrs.AUTHORIZATION)

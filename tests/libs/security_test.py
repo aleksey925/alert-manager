@@ -5,9 +5,10 @@ from alert_manager.libs.security import require_user
 from pytest_mock import MockFixture
 
 
-def test_require_user_no_accounts():
+@pytest.mark.parametrize('accounts', [None, {}])
+def test_require_user_no_accounts(accounts):
     # act
-    login = require_user()
+    login = require_user(accounts)
 
     # assert
     assert login is None
