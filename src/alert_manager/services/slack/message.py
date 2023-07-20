@@ -5,6 +5,7 @@ from typing import Any
 
 from alert_manager.entities.alert_metadata import AlertMetadata
 from alert_manager.enums.grafana import GrafanaAlertState
+from alert_manager.libs.itertools import divide_seq
 from alert_manager.web.entities.grafana import EvalMatch
 
 MsgBlocksType = list[dict[str, Any]]
@@ -48,14 +49,22 @@ class MessageBuilder:
             'type': 'section',
             'text': {'type': 'mrkdwn', 'text': message},
             'fields': [
-                {'type': 'mrkdwn', 'text': f'*{match.metric}:* {match.value}'}
-                for match in eval_matches
+                {
+                    'type': 'mrkdwn',
+                    'text': '\n'.join(
+                        [f'*{match.metric}:* {match.value}' for match in _eval_matches]
+                    ),
+                }
+                for _eval_matches in divide_seq(eval_matches)
+                if _eval_matches
             ],
         }
         if not message_block['text']['text']:
             message_block.pop('text')
         if not message_block['fields']:
             message_block.pop('fields')
+        if message_block == {'type': 'section'}:
+            message_block = {}
 
         snooze_time_select_block = {
             'type': 'actions',
@@ -88,11 +97,16 @@ class MessageBuilder:
         if state is GrafanaAlertState.ok:
             blocks = [title_block]
         else:
-            blocks = [
-                title_block,
-                message_block,
-                snooze_time_select_block,
-            ]
+            blocks = list(
+                filter(
+                    None,
+                    [
+                        title_block,
+                        message_block,
+                        snooze_time_select_block,
+                    ],
+                )
+            )
 
         return title, blocks
 
