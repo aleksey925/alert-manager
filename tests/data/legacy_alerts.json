@@ -48,5 +48,17 @@
       "tags": {},
       "ruleUrl": "http://localhost:3000/d/qO8_77w4k/new-dashboard?tab=alert&viewPanel=2&orgId=1",
       "message": "message"
+   },
+   "no_data_alerting": {
+      "title": "[Alerting] High load on the site",
+      "ruleId": 1,
+      "ruleName": "High load on the site",
+      "state": "alerting",
+      "evalMatches": [],
+      "orgId": 1,
+      "dashboardId": 1,
+      "panelId": 2,
+      "tags": {},
+      "ruleUrl": "http://localhost:3000/d/qO8_77w4k/new-dashboard?tab=alert&viewPanel=2&orgId=1"
    }
 }

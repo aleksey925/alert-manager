@@ -86,7 +86,9 @@ class MessageBuilder:
                             ('1 hour', '60'),
                             ('2 hours', '120'),
                             ('5 hours', '300'),
+                            ('8 hours', '480'),
                             ('1 day', '1440'),
+                            ('2 day', '2880'),
                         ]
                     ],
                 }
