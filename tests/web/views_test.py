@@ -175,7 +175,7 @@ class TestGrafanaAlertViewLegacyAlert:
     ):
         # arrange
         credentials = ('admin', 'admin')
-        config.accounts_ = dict([credentials])
+        config.accounts = dict([credentials])
 
         # act
         resp = await client.post(
@@ -191,7 +191,7 @@ class TestGrafanaAlertViewLegacyAlert:
         self, client, config, webhook_url, legacy_alert_alerting
     ):
         # arrange
-        config.accounts_.update({'admin': 'admin'})
+        config.accounts.update({'admin': 'admin'})
 
         # act
         resp = await client.post(

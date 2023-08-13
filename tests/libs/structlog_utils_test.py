@@ -1,6 +1,7 @@
 import pytest
-from alert_manager.libs.structlog_utils import TimeStamper
 from pytest_mock import MockFixture
+
+from alert_manager.libs.structlog_utils import TimeStamper
 
 
 @pytest.mark.parametrize('fmt', ['unix', None])

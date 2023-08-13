@@ -5,14 +5,13 @@ import typing as t
 from enum import Enum
 from pathlib import Path
 
-from pydantic import Field, Json, validator
-from pydantic.env_settings import (
+from pydantic import Field, Json, field_validator
+from pydantic_settings import (
     BaseSettings,
-    EnvSettingsSource,
-    InitSettingsSource,
-    SecretsSettingsSource,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
 )
-from pydantic_vault import vault_config_settings_source
+from pydantic_vault import VaultSettingsSource
 
 _inst: dict[str, Config] = {}
 project_dir: Path = Path(__file__).absolute().parent.parent.parent
@@ -54,13 +53,13 @@ class Config(BaseSettings):
     log_timestamp_format: LogTimestampFmt = LogTimestampFmt.iso
     filter_backend: FilterBackend = Field(default=FilterBackend.in_memory)
     router_prefix: str = ''
-    accounts_: Json[t.Any] | None = Field(
-        env='ACCOUNTS', vault_secret_path=VAULT_SECRET_PATH, vault_secret_key='accounts'
+    accounts: Json[dict[str, str]] | None = Field(
+        default=None, vault_secret_path=VAULT_SECRET_PATH, vault_secret_key='accounts'
     )
 
     # sentry
-    sentry_dsn: str | None
-    sentry_ca_certs: str | None
+    sentry_dsn: str | None = Field(default=None)
+    sentry_ca_certs: str | None = Field(default=None)
 
     # slack
     slack_token: str = Field(vault_secret_path=VAULT_SECRET_PATH, vault_secret_key='slack_token')
@@ -69,10 +68,17 @@ class Config(BaseSettings):
     )
 
     # redis
-    redis_url: str | None = Field(vault_secret_path=VAULT_SECRET_PATH, vault_secret_key='redis_url')
+    redis_url: str | None = Field(
+        default=None, vault_secret_path=VAULT_SECRET_PATH, vault_secret_key='redis_url'
+    )
 
-    @validator('router_prefix')
-    def router_prefix_validator(cls, value: str, **kwargs: t.Any) -> str:  # noqa: N805
+    model_config: t.ClassVar[SettingsConfigDict] = SettingsConfigDict(
+        env_file=project_dir / '.env', extra='ignore'
+    )
+
+    @field_validator('router_prefix')
+    @classmethod
+    def router_prefix_validator(cls, value: str, **kwargs: t.Any) -> str:
         if value:
             if not value.startswith('/'):
                 raise ValueError('Must start with /')
@@ -80,38 +86,19 @@ class Config(BaseSettings):
                 raise ValueError('Must not end with /')
         return value
 
-    @validator('accounts_')
-    def accounts_validator(
-        cls, value: t.Any, **kwargs: t.Any  # noqa: N805
-    ) -> dict[str, str] | None:
-        if value is None:
-            return None
-        if not isinstance(value, dict):
-            raise ValueError('Must be a dict')
-        if not all(
-            all((isinstance(key, str), isinstance(value, str))) for key, value in value.items()
-        ):
-            raise ValueError('Key and value in dict must be string')
-        return value
-
-    @property
-    def accounts(self) -> dict[str, str] | None:
-        return self.accounts_
-
-    class Config:
-        env_file = project_dir / '.env'
-
-        @classmethod
-        def customise_sources(
-            cls,
-            init_settings: InitSettingsSource,
-            env_settings: EnvSettingsSource,
-            file_secret_settings: SecretsSettingsSource,
-        ) -> tuple[t.Callable[[BaseSettings], dict[str, t.Any]], ...]:
-            optional_sources = []
-            if VAULT_ADDR:
-                optional_sources.append(vault_config_settings_source)
-            return init_settings, env_settings, *optional_sources
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        optional_sources = []
+        if VAULT_ADDR:
+            optional_sources.append(VaultSettingsSource(settings_cls))
+        return init_settings, env_settings, dotenv_settings, *optional_sources
 
 
 def get_config() -> Config:

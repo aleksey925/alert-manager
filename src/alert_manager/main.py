@@ -66,6 +66,6 @@ def app_factory(config: Config) -> web.Application:
     app.on_shutdown.append(shutdown_handler)
     app.add_routes(main_router)
 
-    app['dependency_overrides'] = {accounts_dep: config.accounts}
+    app['values_overrides'] = {accounts_dep: config.accounts}
 
     return app

@@ -100,7 +100,7 @@ class RedisAlertFilter(BaseAlertFilter):
                 channel_name=channel_name,
             )
             await self.redis.set(
-                key, metadata.json(), ex=int(timedelta(minutes=minutes).total_seconds())
+                key, metadata.model_dump_json(), ex=int(timedelta(minutes=minutes).total_seconds())
             )
 
     async def wake_up(self, key: str) -> None:
@@ -113,7 +113,7 @@ class RedisAlertFilter(BaseAlertFilter):
     async def get_all(self, channel_name: str) -> dict[str, AlertMetadata]:
         keys = [i.decode() for i in await self.redis.keys(f'{channel_name};*')]
         return {
-            key: AlertMetadata.parse_raw(raw_metadata)
+            key: AlertMetadata.model_validate_json(raw_metadata)
             for key, raw_metadata in zip(keys, await self.redis.mget(keys), strict=True)
             if raw_metadata
         }
