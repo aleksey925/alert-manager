@@ -2,10 +2,6 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
-from alert_manager.config import Config
-from alert_manager.entities.alert_metadata import AlertMetadata
-from alert_manager.main import app_factory
-from alert_manager.services.alert_filter_backend import RedisAlertFilter
 from fakeredis import aioredis
 from freezegun import freeze_time
 from pytest_aiohttp.plugin import AiohttpClient
@@ -13,6 +9,10 @@ from pytest_mock import MockFixture
 from slack_sdk.socket_mode.aiohttp import SocketModeClient
 from slack_sdk.web.async_client import AsyncWebClient
 
+from alert_manager.config import Config
+from alert_manager.entities.alert_metadata import AlertMetadata
+from alert_manager.main import app_factory
+from alert_manager.services.alert_filter_backend import RedisAlertFilter
 from tests.fixtures import *  # noqa: F403
 
 
@@ -23,18 +23,25 @@ def test_dir_fixture():
 
 @pytest.fixture(name='config')
 def config_fixture():
-    return Config(
-        slack_token='slack_token', slack_socket_mode_token='slack_socket_mode_token', accounts_='{}'
+    class ConfigMock(Config):
+        @classmethod
+        def settings_customise_sources(cls, settings_cls, init_settings, *args, **kwargs):
+            return (init_settings,)
+
+    return ConfigMock(
+        slack_token='slack_token', slack_socket_mode_token='slack_socket_mode_token', accounts='{}'
     )
 
 
 @pytest.fixture(name='redis')
-def redis_fixture():
-    return aioredis.FakeRedis(version=(6,))
+async def redis_fixture():
+    inst = aioredis.FakeRedis(version=(6,))
+    yield inst
+    await inst.flushall()
 
 
 @pytest.fixture(name='alert_filter')
-def alert_filter_fixture(redis) -> RedisAlertFilter:
+async def alert_filter_fixture(redis) -> RedisAlertFilter:
     return RedisAlertFilter(redis)
 
 
@@ -49,7 +56,7 @@ def slack_socket_client_fixture(mocker: MockFixture):
 
 
 @pytest.fixture(name='app')
-def app_fixture(
+async def app_fixture(
     mocker: MockFixture, config, redis, alert_filter, slack_client, slack_socket_client
 ):
     mocker.patch('alert_manager.main.startup_handler')

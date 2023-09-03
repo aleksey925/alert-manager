@@ -1,8 +1,9 @@
 import pytest
 from aiohttp import hdrs, web
 from aiohttp.helpers import BasicAuth
-from alert_manager.libs.security import require_user
 from pytest_mock import MockFixture
+
+from alert_manager.libs.security import require_user
 
 
 @pytest.mark.parametrize('accounts', [None, {}])

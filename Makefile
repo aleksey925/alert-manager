@@ -4,3 +4,6 @@ build-img:
 
 lint:
 	pre-commit run --all
+
+test:
+	pdm run pytest --cov=alert_manager --cov-fail-under=73 ./tests

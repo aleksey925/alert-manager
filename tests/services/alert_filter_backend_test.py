@@ -1,12 +1,13 @@
 from datetime import datetime, timedelta
 
 import pytest
+from freezegun import freeze_time
+
 from alert_manager.entities.alert_metadata import AlertMetadata
 from alert_manager.services.alert_filter_backend import (
     InMemoryAlertFilter,
     RedisAlertFilter,
 )
-from freezegun import freeze_time
 
 
 @freeze_time('2023-07-11')
@@ -149,7 +150,7 @@ class TestRedisAlertFilter:
         # assert
         alerts = await redis.mget(alert_key)
         assert len(alerts) == 1
-        assert AlertMetadata.parse_raw(alerts[0]) == alert_metadata
+        assert AlertMetadata.model_validate_json(alerts[0]) == alert_metadata
 
     async def test_snooze__snooze_to_zero_minutes__alert_deleted_from_inner_storage(
         self, redis, alert_filter, alert_metadata, alert_key
