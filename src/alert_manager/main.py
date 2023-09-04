@@ -48,6 +48,7 @@ def app_factory(config: Config) -> web.Application:
         log_format=config.log_format.value,
         log_level=config.log_level.value,
         log_timestamp_format=config.log_timestamp_format.value,
+        log_health_check_is_enable=config.log_health_check_is_enable,
     )
 
     if config.sentry_dsn:
