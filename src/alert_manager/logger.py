@@ -12,6 +12,11 @@ json_renderer = JSONRenderer(ensure_ascii=False)
 simple_renderer = ConsoleRenderer(colors=True)
 
 
+class EndpointFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        return record.getMessage().find('GET /health-check') == -1
+
+
 def get_processors(timestamp_fmt: str | None) -> list[Processor]:
     return [
         TimeStamper(fmt=timestamp_fmt),
@@ -34,7 +39,10 @@ def _init_structlog(log_level: int, processors: list[Processor]) -> None:
 
 
 def _init_logging(
-    log_level: int, processors: list[Processor], renderer: ConsoleRenderer | JSONRenderer
+    log_level: int,
+    processors: list[Processor],
+    renderer: ConsoleRenderer | JSONRenderer,
+    health_check_is_enable: bool,
 ) -> None:
     dictConfig(
         {
@@ -65,11 +73,15 @@ def _init_logging(
         }
     )
 
+    if not health_check_is_enable:
+        logging.getLogger('aiohttp.access').addFilter(EndpointFilter())
+
 
 def init_logger(
     log_format: str,
     log_level: str,
     log_timestamp_format: str | None,
+    log_health_check_is_enable: bool,
 ) -> None:
     level = getattr(logging, log_level.upper())
     renderer: ConsoleRenderer | JSONRenderer = (
@@ -77,5 +89,5 @@ def init_logger(
     )
 
     processors = get_processors(log_timestamp_format)
-    _init_logging(level, processors, renderer)
+    _init_logging(level, processors, renderer, log_health_check_is_enable)
     _init_structlog(level, processors)

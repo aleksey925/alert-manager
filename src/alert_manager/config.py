@@ -51,6 +51,7 @@ class Config(BaseSettings):
     log_format: LogMode = LogMode.simple
     log_level: LogLevel = LogLevel.info
     log_timestamp_format: LogTimestampFmt = LogTimestampFmt.iso
+    log_health_check_is_enable: bool = True
     filter_backend: FilterBackend = Field(default=FilterBackend.in_memory)
     router_prefix: str = ''
     accounts: Json[dict[str, str]] | None = Field(
