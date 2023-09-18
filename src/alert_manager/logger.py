@@ -14,7 +14,7 @@ simple_renderer = ConsoleRenderer(colors=True)
 
 class EndpointFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
-        return record.getMessage().find('GET /health-check') == -1
+        return record.getMessage().find('/health-check/') == -1
 
 
 def get_processors(timestamp_fmt: str | None) -> list[Processor]:
