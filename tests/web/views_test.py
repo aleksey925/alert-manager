@@ -4,20 +4,27 @@ from pytest_aiohttp.plugin import AiohttpClient
 
 
 class TestGrafanaAlertViewLegacyAlert:
+    @pytest.mark.parametrize('target_payload', ['value_int', 'value_float'])
     async def test_new_alert_received__message_published(
         self,
         client: AiohttpClient,
         slack_client,
-        legacy_alert_alerting,
+        legacy_alert_alerting_value_int,
+        legacy_alert_alerting_value_float,
         webhook_url,
         channel,
         snooze_for_block,
+        target_payload,
     ):
         # arrange
-        text = f'[Alerting] {legacy_alert_alerting["ruleName"]}'
+        alert_payload = {
+            'value_int': legacy_alert_alerting_value_int,
+            'value_float': legacy_alert_alerting_value_float,
+        }[target_payload]
+        text = f'[Alerting] {alert_payload["ruleName"]}'
 
         # act
-        resp = await client.post(webhook_url, json=legacy_alert_alerting)
+        resp = await client.post(webhook_url, json=alert_payload)
 
         # assert
         assert resp.status == 200
@@ -29,19 +36,19 @@ class TestGrafanaAlertViewLegacyAlert:
             'blocks': [
                 {
                     'type': 'section',
-                    'block_id': f'title|{legacy_alert_alerting["ruleUrl"]}',
+                    'block_id': f'title|{alert_payload["ruleUrl"]}',
                     'text': {
                         'type': 'mrkdwn',
-                        'text': f':red_circle: <{legacy_alert_alerting["ruleUrl"]}|*{text}*>',
+                        'text': f':red_circle: <{alert_payload["ruleUrl"]}|*{text}*>',
                     },
                 },
                 {
                     'type': 'section',
-                    'text': {'type': 'mrkdwn', 'text': legacy_alert_alerting['message']},
+                    'text': {'type': 'mrkdwn', 'text': alert_payload['message']},
                     'fields': [
                         {
                             'type': 'mrkdwn',
-                            'text': f'*{legacy_alert_alerting["evalMatches"][0]["metric"]}:* {legacy_alert_alerting["evalMatches"][0]["value"]}',
+                            'text': f'*{alert_payload["evalMatches"][0]["metric"]}:* {alert_payload["evalMatches"][0]["value"]}',
                         }
                     ],
                 },
@@ -151,7 +158,13 @@ class TestGrafanaAlertViewLegacyAlert:
         }
 
     async def test_snoozed_alert_received__alert_skipped(
-        self, client, alert_filter, webhook_url, alert_metadata, legacy_alert_alerting, slack_client
+        self,
+        client,
+        alert_filter,
+        webhook_url,
+        alert_metadata,
+        legacy_alert_alerting_value_int,
+        slack_client,
     ):
         # arrange
         await alert_filter.snooze(
@@ -163,7 +176,7 @@ class TestGrafanaAlertViewLegacyAlert:
         )
 
         # act
-        resp = await client.post(webhook_url, json=legacy_alert_alerting)
+        resp = await client.post(webhook_url, json=legacy_alert_alerting_value_int)
 
         # assert
         assert resp.status == 200
@@ -171,7 +184,7 @@ class TestGrafanaAlertViewLegacyAlert:
         assert slack_client.chat_postMessage.call_count == 0
 
     async def test_request_with_authorization__credentials_is_correct(
-        self, config, client, webhook_url, legacy_alert_alerting
+        self, config, client, webhook_url, legacy_alert_alerting_value_int
     ):
         # arrange
         credentials = ('admin', 'admin')
@@ -180,7 +193,7 @@ class TestGrafanaAlertViewLegacyAlert:
         # act
         resp = await client.post(
             webhook_url,
-            json=legacy_alert_alerting,
+            json=legacy_alert_alerting_value_int,
             auth=BasicAuth(*credentials),
         )
 
@@ -188,7 +201,7 @@ class TestGrafanaAlertViewLegacyAlert:
         assert resp.status == 200
 
     async def test_request_with_authorization__credentials_is_not_correct(
-        self, client, config, webhook_url, legacy_alert_alerting
+        self, client, config, webhook_url, legacy_alert_alerting_value_int
     ):
         # arrange
         config.accounts.update({'admin': 'admin'})
@@ -196,7 +209,7 @@ class TestGrafanaAlertViewLegacyAlert:
         # act
         resp = await client.post(
             webhook_url,
-            json=legacy_alert_alerting,
+            json=legacy_alert_alerting_value_int,
             auth=BasicAuth('admin', 'bad_password'),
         )
 
@@ -233,9 +246,7 @@ class TestGrafanaAlertViewLegacyAlert:
         }
 
 
-async def test_grafana_alert_view(
-    client: AiohttpClient, slack_client, legacy_alert_alerting, webhook_url, channel
-):
+async def test_grafana_alert_view(client: AiohttpClient, slack_client, webhook_url, channel):
     # act
     resp = await client.get('/health-check/')
 

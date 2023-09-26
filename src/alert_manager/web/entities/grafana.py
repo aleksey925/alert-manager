@@ -5,7 +5,7 @@ from alert_manager.enums.grafana import GrafanaAlertState
 
 class EvalMatch(BaseModel):
     metric: str
-    value: int
+    value: int | float
     tags: dict[str, str] | None = Field(default=None)
 
 

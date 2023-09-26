@@ -4,7 +4,8 @@ from pathlib import Path
 import pytest
 
 __all__ = [
-    'legacy_alert_alerting',
+    'legacy_alert_alerting_value_int',
+    'legacy_alert_alerting_value_float',
     'legacy_alert_no_data',
     'legacy_alert_no_data_alerting',
     'legacy_alert_ok',
@@ -12,8 +13,17 @@ __all__ = [
 
 
 @pytest.fixture
-def legacy_alert_alerting(test_dir: Path):
-    return json.loads((test_dir / 'data' / 'legacy_alerts.json').read_text())['alerting']
+def legacy_alert_alerting_value_int(test_dir: Path):
+    return json.loads((test_dir / 'data' / 'legacy_alerts.json').read_text())['alerting'][
+        'value_int'
+    ]
+
+
+@pytest.fixture
+def legacy_alert_alerting_value_float(test_dir: Path):
+    return json.loads((test_dir / 'data' / 'legacy_alerts.json').read_text())['alerting'][
+        'value_float'
+    ]
 
 
 @pytest.fixture
