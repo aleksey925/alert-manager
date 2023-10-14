@@ -4,23 +4,17 @@ from pytest_aiohttp.plugin import AiohttpClient
 
 
 class TestGrafanaAlertViewLegacyAlert:
-    @pytest.mark.parametrize('target_payload', ['value_int', 'value_float'])
     async def test_new_alert_received__message_published(
         self,
         client: AiohttpClient,
         slack_client,
-        legacy_alert_alerting_value_int,
-        legacy_alert_alerting_value_float,
+        legacy_alert_alerting,
         webhook_url,
         channel,
         snooze_for_block,
-        target_payload,
     ):
         # arrange
-        alert_payload = {
-            'value_int': legacy_alert_alerting_value_int,
-            'value_float': legacy_alert_alerting_value_float,
-        }[target_payload]
+        alert_payload = legacy_alert_alerting
         text = f'[Alerting] {alert_payload["ruleName"]}'
 
         # act
@@ -49,7 +43,11 @@ class TestGrafanaAlertViewLegacyAlert:
                         {
                             'type': 'mrkdwn',
                             'text': f'*{alert_payload["evalMatches"][0]["metric"]}:* {alert_payload["evalMatches"][0]["value"]}',
-                        }
+                        },
+                        {
+                            'type': 'mrkdwn',
+                            'text': f'*{alert_payload["evalMatches"][1]["metric"]}:* {alert_payload["evalMatches"][1]["value"]}',
+                        },
                     ],
                 },
                 snooze_for_block,
@@ -163,7 +161,7 @@ class TestGrafanaAlertViewLegacyAlert:
         alert_filter,
         webhook_url,
         alert_metadata,
-        legacy_alert_alerting_value_int,
+        legacy_alert_alerting,
         slack_client,
     ):
         # arrange
@@ -176,7 +174,7 @@ class TestGrafanaAlertViewLegacyAlert:
         )
 
         # act
-        resp = await client.post(webhook_url, json=legacy_alert_alerting_value_int)
+        resp = await client.post(webhook_url, json=legacy_alert_alerting)
 
         # assert
         assert resp.status == 200
@@ -184,7 +182,7 @@ class TestGrafanaAlertViewLegacyAlert:
         assert slack_client.chat_postMessage.call_count == 0
 
     async def test_request_with_authorization__credentials_is_correct(
-        self, config, client, webhook_url, legacy_alert_alerting_value_int
+        self, config, client, webhook_url, legacy_alert_alerting
     ):
         # arrange
         credentials = ('admin', 'admin')
@@ -193,7 +191,7 @@ class TestGrafanaAlertViewLegacyAlert:
         # act
         resp = await client.post(
             webhook_url,
-            json=legacy_alert_alerting_value_int,
+            json=legacy_alert_alerting,
             auth=BasicAuth(*credentials),
         )
 
@@ -201,7 +199,7 @@ class TestGrafanaAlertViewLegacyAlert:
         assert resp.status == 200
 
     async def test_request_with_authorization__credentials_is_not_correct(
-        self, client, config, webhook_url, legacy_alert_alerting_value_int
+        self, client, config, webhook_url, legacy_alert_alerting
     ):
         # arrange
         config.accounts.update({'admin': 'admin'})
@@ -209,7 +207,7 @@ class TestGrafanaAlertViewLegacyAlert:
         # act
         resp = await client.post(
             webhook_url,
-            json=legacy_alert_alerting_value_int,
+            json=legacy_alert_alerting,
             auth=BasicAuth('admin', 'bad_password'),
         )
 

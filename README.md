@@ -13,6 +13,8 @@ Table of contents:
   - [Vault](#vault)
   - [Monitoring](#monitoring)
 - [Deploy](#deploy)
+- [Develop](#develop)
+  - [Debug](#debug)
 
 
 ## How it works
@@ -121,3 +123,17 @@ Now there are two approaches to monitoring the alert-manager:
    ```
    docker compose up
    ```
+
+
+## Develop
+
+### Debug
+
+If you want to debug an application and need to provide global access to a locally running
+application, you can use ngrok.
+
+You can do it with the following command:
+
+```
+ngrok http 8080
+```

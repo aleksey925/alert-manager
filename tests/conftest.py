@@ -85,11 +85,11 @@ def webhook_url_fixture(channel):
 
 @pytest.fixture(name='alert_metadata')
 @freeze_time('2023-07-11')
-def alert_metadata_fixture(channel, legacy_alert_alerting_value_int):
+def alert_metadata_fixture(channel, legacy_alert_alerting):
     return AlertMetadata(
         channel_name=channel,
-        title=legacy_alert_alerting_value_int['title'],
+        title=legacy_alert_alerting['title'],
         snoozed_by='user_nick',
         snoozed_until=(datetime.now() + timedelta(minutes=10)).timestamp(),
-        rule_url=legacy_alert_alerting_value_int['ruleUrl'],
+        rule_url=legacy_alert_alerting['ruleUrl'],
     )

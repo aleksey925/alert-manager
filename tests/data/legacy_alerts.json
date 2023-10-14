@@ -1,6 +1,6 @@
 {
    "alerting": {
-      "value_int": {
+      "two_matches": {
          "title": "[Alerting] High load on the site",
          "ruleId": 1,
          "ruleName": "High load on the site",
@@ -15,24 +15,10 @@
                   "job": "my_app",
                   "name": "index"
                }
-            }
-         ],
-         "orgId": 1,
-         "dashboardId": 1,
-         "panelId": 2,
-         "tags": {},
-         "ruleUrl": "http://localhost:3000/d/qO8_77w4k/new-dashboard?tab=alert&viewPanel=2&orgId=1",
-         "message": "message"
-      },
-      "value_float": {
-         "title": "[Alerting] High load on the site",
-         "ruleId": 1,
-         "ruleName": "High load on the site",
-         "state": "alerting",
-         "evalMatches": [
+            },
             {
                "value": 3.4,
-               "metric": "index",
+               "metric": "about",
                "tags": {
                   "__name__": "my_app_open_page_total",
                   "instance": "app:8000",
