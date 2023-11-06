@@ -6,6 +6,7 @@ from aiohttp import web
 from aiohttp_deps import Router, setup_swagger
 from aiohttp_deps import init as deps_init
 from redis.asyncio.client import Redis
+from redis.connection import parse_url as parse_redis_url
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 from sentry_sdk.integrations.asyncio import AsyncioIntegration
 from slack_sdk.web.async_client import AsyncWebClient
@@ -25,7 +26,14 @@ async def startup_handler(app: web.Application, config: Config) -> None:
     if config.filter_backend == FilterBackend.redis:
         if config.redis_url is None:
             raise ValueError('Redis url is not set')
-        app['redis'] = Redis.from_url(config.redis_url)
+        redis_params = {
+            **parse_redis_url(config.redis_url),
+            'ssl': bool(config.redis_ssl_ca_certs_path),
+            'ssl_ca_certs': config.redis_ssl_ca_certs_path,
+            'ssl_certfile': config.redis_ssl_client_cert_path,
+            'ssl_keyfile': config.redis_ssl_client_key_path,
+        }
+        app['redis'] = Redis(**redis_params)
         app['alert_filter'] = RedisAlertFilter(app['redis'])
         await app['redis'].ping()
     else:
