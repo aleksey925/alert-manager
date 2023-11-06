@@ -12,7 +12,9 @@ from pydantic_settings import (
     SettingsConfigDict,
 )
 from pydantic_vault import VaultSettingsSource
+from structlog import getLogger
 
+logger = getLogger(__name__)
 _inst: dict[str, Config] = {}
 project_dir: Path = Path(__file__).absolute().parent.parent.parent
 
@@ -72,6 +74,18 @@ class Config(BaseSettings):
     redis_url: str | None = Field(
         default=None, vault_secret_path=VAULT_SECRET_PATH, vault_secret_key='redis_url'
     )
+    redis_ssl_ca_certs_path: Path | None = None
+    redis_ssl_ca_certs: str | None = Field(
+        default=None, vault_secret_path=VAULT_SECRET_PATH, vault_secret_key='redis_ssl_ca_certs'
+    )
+    redis_ssl_client_cert_path: Path | None = None
+    redis_ssl_client_cert: str | None = Field(
+        default=None, vault_secret_path=VAULT_SECRET_PATH, vault_secret_key='redis_ssl_client_cert'
+    )
+    redis_ssl_client_key_path: Path | None = None
+    redis_ssl_client_key: str | None = Field(
+        default=None, vault_secret_path=VAULT_SECRET_PATH, vault_secret_key='redis_ssl_client_key'
+    )
 
     model_config: t.ClassVar[SettingsConfigDict] = SettingsConfigDict(
         env_file=project_dir / '.env', extra='ignore'
@@ -102,11 +116,25 @@ class Config(BaseSettings):
         return init_settings, env_settings, dotenv_settings, *optional_sources
 
 
+def save_secrets_to_file(config: Config) -> None:
+    secrets = (
+        (config.redis_ssl_ca_certs_path, config.redis_ssl_ca_certs, 'redis_ssl_ca_certs'),
+        (config.redis_ssl_client_cert_path, config.redis_ssl_client_cert, 'redis_ssl_client_cert'),
+        (config.redis_ssl_client_key_path, config.redis_ssl_client_key, 'redis_ssl_client_key'),
+    )
+    for path, content, secret_name in secrets:
+        if not path and content:
+            raise ValueError(f'Secret path {secret_name} is not set')
+        if content is not None:
+            path.write_text(content, encoding='utf-8')  # type: ignore[union-attr]
+
+
 def get_config() -> Config:
     try:
         config = _inst['conf']
     except KeyError:
         config = Config()  # type: ignore[call-arg]
         _inst['conf'] = config
+        save_secrets_to_file(config)
 
     return config
