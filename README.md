@@ -101,6 +101,9 @@ these settings corresponds to the name of the key in the secret of the vault):
 - slack_token
 - slack_socket_mode_token
 - redis_url
+- redis_ssl_ca_certs
+- redis_ssl_client_cert
+- redis_ssl_client_key
 
 
 ### Monitoring
