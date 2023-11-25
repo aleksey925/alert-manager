@@ -47,7 +47,7 @@ async def startup_handler(app: web.Application, config: Config) -> None:
 
 async def shutdown_handler(app: web.Application) -> None:
     if redis := app.get('redis'):
-        await redis.close()
+        await redis.aclose()
     await app['slack_socket_client'].close()
 
 
