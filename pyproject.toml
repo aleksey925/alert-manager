@@ -8,28 +8,28 @@ authors = [
 license = {text = "MIT"}
 requires-python = ">=3.11"
 dependencies = [
-    "aiohttp[speedups]>=3.8.5",
-    "aiohttp-deps>=1.0.1",
-    "slack-sdk>=3.21.3",
-    "pydantic>=2.1.0",
-    "pydantic-settings>=2.0.3",
-    "pydantic-settings-vault>=1.0.0",
+    "aiohttp[speedups]>=3.9.0",
+    "aiohttp-deps>=1.0.2",
+    "slack-sdk>=3.26.0",
+    "pydantic>=2.5.2",
+    "pydantic-settings>=2.1.0",
+    "pydantic-settings-vault>=2.0.0",
     "click>=8.1.7",
-    "redis>=5.0.0",
-    "structlog>=23.1.0",
+    "redis>=5.0.1",
+    "structlog>=23.2.0",
     "sentry-sdk>=1.30.0",
 ]
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4.1",
     "pytest-asyncio>=0.21.0",
-    "pytest-aiohttp>=1.0.4",
-    "pytest-mock>=3.11.1",
+    "pytest-aiohttp>=1.0.5",
+    "pytest-mock>=3.12.0",
     "pytest-cov>=4.1.0",
     "coverage>=7.2.7",
-    "mypy>=1.5.1",
-    "pre-commit>=3.4.0",
-    "types-redis>=4.6.0.5",
+    "mypy>=1.7.1",
+    "pre-commit>=3.5.0",
+    "types-redis>=4.6.0.11",
     "freezegun>=1.2.2",
     "fakeredis>=2.18.0",
 ]

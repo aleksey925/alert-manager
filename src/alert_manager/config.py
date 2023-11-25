@@ -57,7 +57,8 @@ class Config(BaseSettings):
     filter_backend: FilterBackend = Field(default=FilterBackend.in_memory)
     router_prefix: str = ''
     accounts: Json[dict[str, str]] | None = Field(
-        default=None, vault_secret_path=VAULT_SECRET_PATH, vault_secret_key='accounts'
+        default=None,
+        json_schema_extra={'vault_secret_path': VAULT_SECRET_PATH, 'vault_secret_key': 'accounts'},
     )
 
     # sentry
@@ -65,26 +66,47 @@ class Config(BaseSettings):
     sentry_ca_certs: str | None = Field(default=None)
 
     # slack
-    slack_token: str = Field(vault_secret_path=VAULT_SECRET_PATH, vault_secret_key='slack_token')
+    slack_token: str = Field(
+        json_schema_extra={
+            'vault_secret_path': VAULT_SECRET_PATH,
+            'vault_secret_key': 'slack_token',
+        }
+    )
     slack_socket_mode_token: str = Field(
-        vault_secret_path=VAULT_SECRET_PATH, vault_secret_key='slack_socket_mode_token'
+        json_schema_extra={
+            'vault_secret_path': VAULT_SECRET_PATH,
+            'vault_secret_key': 'slack_socket_mode_token',
+        }
     )
 
     # redis
     redis_url: str | None = Field(
-        default=None, vault_secret_path=VAULT_SECRET_PATH, vault_secret_key='redis_url'
+        default=None,
+        json_schema_extra={'vault_secret_path': VAULT_SECRET_PATH, 'vault_secret_key': 'redis_url'},
     )
     redis_ssl_ca_certs_path: Path | None = None
     redis_ssl_ca_certs: str | None = Field(
-        default=None, vault_secret_path=VAULT_SECRET_PATH, vault_secret_key='redis_ssl_ca_certs'
+        default=None,
+        json_schema_extra={
+            'vault_secret_path': VAULT_SECRET_PATH,
+            'vault_secret_key': 'redis_ssl_ca_certs',
+        },
     )
     redis_ssl_client_cert_path: Path | None = None
     redis_ssl_client_cert: str | None = Field(
-        default=None, vault_secret_path=VAULT_SECRET_PATH, vault_secret_key='redis_ssl_client_cert'
+        default=None,
+        json_schema_extra={
+            'vault_secret_path': VAULT_SECRET_PATH,
+            'vault_secret_key': 'redis_ssl_client_cert',
+        },
     )
     redis_ssl_client_key_path: Path | None = None
     redis_ssl_client_key: str | None = Field(
-        default=None, vault_secret_path=VAULT_SECRET_PATH, vault_secret_key='redis_ssl_client_key'
+        default=None,
+        json_schema_extra={
+            'vault_secret_path': VAULT_SECRET_PATH,
+            'vault_secret_key': 'redis_ssl_client_key',
+        },
     )
 
     model_config: t.ClassVar[SettingsConfigDict] = SettingsConfigDict(
@@ -113,6 +135,8 @@ class Config(BaseSettings):
         optional_sources = []
         if VAULT_ADDR:
             optional_sources.append(VaultSettingsSource(settings_cls))
+        else:
+            logger.info('Vault integration is disabled. VAULT_ADDR env var is not set.')
         return init_settings, env_settings, dotenv_settings, *optional_sources
 
 
