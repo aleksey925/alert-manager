@@ -6,6 +6,7 @@ from typing import Any
 from alert_manager.entities.alert_metadata import AlertMetadata
 from alert_manager.enums.grafana import GrafanaAlertState
 from alert_manager.libs.itertools import divide_seq
+from alert_manager.libs.text import truncate as truncate_text
 from alert_manager.web.entities.grafana import EvalMatch
 
 MsgBlocksType = list[dict[str, Any]]
@@ -110,7 +111,7 @@ class MessageBuilder:
                 )
             )
 
-        return title, blocks
+        return title, truncate_block_length(blocks)
 
     @classmethod
     def add_alert_status_to_message(
@@ -179,7 +180,7 @@ class MessageBuilder:
             }
             blocks.append(snoozed_alert_block)
 
-        return msg_title, blocks
+        return msg_title, truncate_block_length(blocks)
 
     @classmethod
     def remove_woke_alert(cls, message_blocks: MsgBlocksType, alert_key: str) -> MsgBlocksType:
@@ -190,3 +191,17 @@ class MessageBuilder:
         if len(blocks) == 1:
             blocks[0]['fields'][0]['text'] = f'*{cls.alerts_not_found_text}*'
         return blocks
+
+
+def truncate_block_length(blocks: MsgBlocksType) -> MsgBlocksType:
+    for block in blocks:
+        if block.get('type', '') != 'section':
+            continue
+        if block.get('text'):
+            block['text']['text'] = truncate_text(text=block['text']['text'], max_length=3000)
+        if block.get('fields'):
+            for field in block['fields']:
+                if field.get('text'):
+                    field['text'] = truncate_text(text=field['text'], max_length=2000)
+
+    return blocks
