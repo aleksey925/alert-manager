@@ -1,5 +1,5 @@
 from alert_manager.enums.grafana import GrafanaAlertState
-from alert_manager.services.slack.message import MessageBuilder
+from alert_manager.services.slack.message import MessageBuilder, truncate_block_length
 
 
 class TestMessageBuilder:
@@ -17,3 +17,40 @@ class TestMessageBuilder:
 
         # assert
         assert len(blocks) == 2
+
+
+def test_truncate_block_length__non_section():
+    # arrange
+    blocks = [{'type': 'non-section', 'text': {'text': 'a' * 4000}}]
+
+    # act
+    result = truncate_block_length(blocks)
+
+    # assert
+    assert result == blocks
+
+
+def test_truncate_block_length__section():
+    # arrange
+    blocks = [{'type': 'section', 'text': {'text': 'a' * 4000}}]
+
+    # act
+    result = truncate_block_length(blocks)
+
+    # assert
+    assert len(result[0]['text']['text']) == 3000
+    assert result[0]['text']['text'].endswith('...')
+
+
+def test_truncate_block_length__section_fields():
+    # arrange
+    blocks = [{'type': 'section', 'fields': [{'text': 'a' * 3000}, {'text': 'a' * 3000}]}]
+
+    # act
+    result = truncate_block_length(blocks)
+
+    # assert
+    assert len(result[0]['fields'][0]['text']) == 2000
+    assert result[0]['fields'][0]['text'].endswith('...')
+    assert len(result[0]['fields'][1]['text']) == 2000
+    assert result[0]['fields'][1]['text'].endswith('...')
