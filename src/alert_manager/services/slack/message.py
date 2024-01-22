@@ -11,6 +11,8 @@ from alert_manager.web.entities.grafana import EvalMatch
 
 MsgBlocksType = list[dict[str, Any]]
 
+ALL_POSSIBLE_METRICS = 'all_possible_metrics'
+
 
 def get_rule_url(message_blocks: MsgBlocksType) -> str:
     url = ''
@@ -46,9 +48,11 @@ class MessageBuilder:
             'block_id': f'title|{rule_url}',
             'text': {'type': 'mrkdwn', 'text': f'{status_emoji}<{rule_url}|*{title}*>'},
         }
+        _message = f'{message or ""}\n\n*Metrics:*' if eval_matches else message
         message_block: dict[str, t.Any] = {
             'type': 'section',
-            'text': {'type': 'mrkdwn', 'text': message},
+            'block_id': 'message',
+            'text': {'type': 'mrkdwn', 'text': _message},
             'fields': [
                 {
                     'type': 'mrkdwn',
@@ -60,15 +64,48 @@ class MessageBuilder:
                 if _eval_matches
             ],
         }
+
+        _metrics_to_snooze_options = [
+            {
+                'text': {'type': 'plain_text', 'text': match.metric},
+                'value': match.metric,
+            }
+            for match in eval_matches
+        ]
+        _metrics_to_snooze_initial_options = _metrics_to_snooze_options[:]
+        _metrics_to_snooze_options.insert(
+            0,
+            {
+                'text': {'type': 'plain_text', 'text': 'all possible metrics'},
+                'value': ALL_POSSIBLE_METRICS,
+            },
+        )
+        metrics_to_snooze_block = {
+            'type': 'input',
+            'block_id': 'metrics_to_snooze',
+            'label': {'type': 'plain_text', 'text': 'Select metrics to snooze :book:'},
+            'element': {
+                'type': 'multi_static_select',
+                'placeholder': {'type': 'plain_text', 'text': 'Select metrics'},
+                'action_id': 'select-metrics-to-snooze',
+                'initial_options': _metrics_to_snooze_initial_options,
+                'options': _metrics_to_snooze_options,
+            },
+        }
+
+        # Delete empty blocks, because slack doesn't allow to send empty blocks
         if not message_block['text']['text']:
             message_block.pop('text')
         if not message_block['fields']:
+            # Delete block that contains only metrics
             message_block.pop('fields')
-        if message_block == {'type': 'section'}:
+            metrics_to_snooze_block = {}
+        if frozenset(message_block.keys()) == frozenset(('type', 'block_id')):
             message_block = {}
 
         snooze_time_select_block = {
             'type': 'actions',
+            'block_id': 'snooze-time-select',
             'elements': [
                 {
                     'type': 'static_select',
@@ -106,6 +143,7 @@ class MessageBuilder:
                     [
                         title_block,
                         message_block,
+                        metrics_to_snooze_block,
                         snooze_time_select_block,
                     ],
                 )
@@ -172,10 +210,29 @@ class MessageBuilder:
                     ),
                 },
                 'accessory': {
-                    'type': 'button',
-                    'text': {'type': 'plain_text', 'text': ':bell: Wake Up', 'emoji': True},
-                    'value': key,
+                    'type': 'multi_static_select',
+                    'placeholder': {'type': 'plain_text', 'text': 'Select metrics', 'emoji': True},
                     'action_id': 'wake-up',
+                    'initial_options': [
+                        {
+                            'text': {
+                                'type': 'plain_text',
+                                'text': '*this is plain_text text*',
+                                'emoji': True,
+                            },
+                            'value': 'value-0',
+                        }
+                    ],
+                    'options': [
+                        {
+                            'text': {
+                                'type': 'plain_text',
+                                'text': '*this is plain_text text*',
+                                'emoji': True,
+                            },
+                            'value': 'value-0',
+                        }
+                    ],
                 },
             }
             blocks.append(snoozed_alert_block)

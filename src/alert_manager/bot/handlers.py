@@ -73,6 +73,7 @@ class Dispatcher:
             snoozed_by=snoozed_by,
         )
 
+        # TODO если выбрали опцию фильтровалить все, но убираем остальные сервисы и оставляем выбранным только 1 пункт
         channel_name: str = request.payload['channel']['name']
         rule_url = get_rule_url(request.payload['message']['blocks'])
         if not rule_url:
@@ -98,6 +99,7 @@ class Dispatcher:
     async def wake_up_handler(
         self, *, client: SocketModeClient, request: SocketModeRequest, action: dict[str, t.Any]
     ) -> None:
+        # TODO если удалили все метрики из списка, то удаляем алерт
         alert_key = action['value']
         await self.alert_filter.wake_up(alert_key)
 
