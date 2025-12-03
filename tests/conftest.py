@@ -65,6 +65,7 @@ async def app_fixture(
     app['alert_filter'] = alert_filter
     app['slack_client'] = slack_client
     app['slack_socket_client'] = slack_socket_client
+    app['use_channel_id'] = False
     yield app
 
 
@@ -83,11 +84,16 @@ def webhook_url_fixture(channel):
     return f'/webhook/grafana/?channel={channel}'
 
 
+@pytest.fixture(name='channel_id')
+def channel_id_fixture():
+    return 'C1234567890'
+
+
 @pytest.fixture(name='alert_metadata')
 @freeze_time('2023-07-11')
 def alert_metadata_fixture(channel, legacy_alert_alerting):
     return AlertMetadata(
-        channel_name=channel,
+        channel=channel,
         title=legacy_alert_alerting['title'],
         snoozed_by='user_nick',
         snoozed_until=(datetime.now() + timedelta(minutes=10)).timestamp(),

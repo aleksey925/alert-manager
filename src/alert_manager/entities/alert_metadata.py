@@ -6,4 +6,4 @@ class AlertMetadata(BaseModel):
     rule_url: str
     snoozed_by: str
     snoozed_until: int | float
-    channel_name: str
+    channel: str

@@ -159,19 +159,20 @@ class TestGrafanaAlertViewLegacyAlert:
         self,
         client,
         alert_filter,
-        webhook_url,
+        channel,
         alert_metadata,
         legacy_alert_alerting,
         slack_client,
     ):
         # arrange
         await alert_filter.snooze(
-            channel_name=alert_metadata.channel_name,
+            channel=alert_metadata.channel,
             title=alert_metadata.title,
             rule_url=alert_metadata.rule_url,
             snoozed_by='user_nick',
             minutes=10,
         )
+        webhook_url = f'/webhook/grafana/?channel={channel}'
 
         # act
         resp = await client.post(webhook_url, json=legacy_alert_alerting)

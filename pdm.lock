@@ -3,10 +3,12 @@
 
 [metadata]
 groups = ["default", "dev"]
-cross_platform = true
-static_urls = false
-lock_version = "4.3"
-content_hash = "sha256:a9cf440276ba8a28ab057e0340b182a8e7c81ace6be9d60b884176b3c53c5c7f"
+strategy = ["cross_platform"]
+lock_version = "4.5.0"
+content_hash = "sha256:ec03e6701b19d67d3a1727feeee2b097f09b790dc8342722924b55122cbb08ba"
+
+[[metadata.targets]]
+requires_python = ">=3.11"
 
 [[package]]
 name = "aiodns"

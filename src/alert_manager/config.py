@@ -56,6 +56,7 @@ class Config(BaseSettings):
     log_health_check_is_enable: bool = True
     filter_backend: FilterBackend = Field(default=FilterBackend.in_memory)
     router_prefix: str = ''
+    use_channel_id: bool = Field(default=False)
     accounts: Json[dict[str, str]] | None = Field(
         default=None,
         json_schema_extra={'vault_secret_path': VAULT_SECRET_PATH, 'vault_secret_key': 'accounts'},

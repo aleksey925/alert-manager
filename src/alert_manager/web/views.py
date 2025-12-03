@@ -1,5 +1,3 @@
-import logging
-
 from aiohttp import web
 from aiohttp_deps import Depends, Json, Query, Router
 
@@ -8,13 +6,13 @@ from alert_manager.services.alert_filter_backend import BaseAlertFilter
 from alert_manager.services.slack.message import MessageBuilder
 from alert_manager.web.entities.grafana import GrafanaAlertRequest
 
-logger = logging.getLogger(__name__)
 router = Router()
 
 
 @router.post('/webhook/grafana/')
 async def grafana_alert_view(
-    channel: str = Depends(Query()),
+    channel_id: str | None = Depends(Query(default=None)),
+    channel_name: str | None = Depends(Query(default=None, alias='channel')),
     payload: GrafanaAlertRequest = Depends(Json()),
     request: web.Request = Depends(),
     _: str | None = Depends(require_user),
@@ -22,8 +20,27 @@ async def grafana_alert_view(
     """
     Accepts and processes alerts from grafana.
     """
+    use_channel_id: bool = request.app['use_channel_id']
     alert_filter: BaseAlertFilter = request.app['alert_filter']
-    if await alert_filter.is_snoozed(channel, payload.rule_url):
+
+    if use_channel_id:
+        if not channel_id:
+            return web.Response(
+                status=400,
+                text='channel_id query parameter is required when USE_CHANNEL_ID=true',
+            )
+        filter_channel = channel_id
+        slack_channel = channel_id
+    else:
+        if not channel_name:
+            return web.Response(
+                status=400,
+                text='channel query parameter is required when USE_CHANNEL_ID=false',
+            )
+        filter_channel = channel_name
+        slack_channel = f'#{channel_name}'
+
+    if await alert_filter.is_snoozed(filter_channel, payload.rule_url):
         return web.Response()
 
     text, blocks = MessageBuilder.create_alert_message(
@@ -34,7 +51,7 @@ async def grafana_alert_view(
         eval_matches=payload.eval_matches,
     )
     await request.app['slack_client'].chat_postMessage(
-        channel=f'#{channel}',
+        channel=slack_channel,
         text=text,
         blocks=blocks,
     )

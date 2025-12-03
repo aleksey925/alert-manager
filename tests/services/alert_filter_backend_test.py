@@ -18,7 +18,7 @@ class TestInMemoryAlertFilter:
 
         # act
         await alert_filter.snooze(
-            channel_name=alert_metadata.channel_name,
+            channel=alert_metadata.channel,
             title=alert_metadata.title,
             rule_url=alert_metadata.rule_url,
             snoozed_by=alert_metadata.snoozed_by,
@@ -37,7 +37,7 @@ class TestInMemoryAlertFilter:
 
         # act
         await alert_filter.snooze(
-            channel_name=alert_metadata.channel_name,
+            channel=alert_metadata.channel,
             title=alert_metadata.title,
             rule_url=alert_metadata.rule_url,
             snoozed_by=alert_metadata.snoozed_by,
@@ -48,7 +48,7 @@ class TestInMemoryAlertFilter:
         assert alert_key not in alert_filter._snoozed_alerts
         assert (
             await alert_filter.is_snoozed(
-                channel_name=alert_metadata.channel_name,
+                channel=alert_metadata.channel,
                 rule_url=alert_metadata.rule_url,
             )
             is False
@@ -60,7 +60,7 @@ class TestInMemoryAlertFilter:
 
         # act
         result = await alert_filter.is_snoozed(
-            channel_name=alert_metadata.channel_name, rule_url=alert_metadata.rule_url
+            channel=alert_metadata.channel, rule_url=alert_metadata.rule_url
         )
 
         # assert
@@ -71,7 +71,7 @@ class TestInMemoryAlertFilter:
     ):
         # act
         result = await alert_filter.is_snoozed(
-            channel_name=alert_metadata.channel_name, rule_url=alert_metadata.rule_url
+            channel=alert_metadata.channel, rule_url=alert_metadata.rule_url
         )
 
         # assert
@@ -85,7 +85,7 @@ class TestInMemoryAlertFilter:
 
         # act
         result = await alert_filter.is_snoozed(
-            channel_name=alert_metadata.channel_name, rule_url=alert_metadata.rule_url
+            channel=alert_metadata.channel, rule_url=alert_metadata.rule_url
         )
 
         # assert
@@ -108,7 +108,7 @@ class TestInMemoryAlertFilter:
         alert_filter._snoozed_alerts[alert_key] = alert_metadata
 
         # act
-        alerts = await alert_filter.get_all(channel_name=alert_metadata.channel_name)
+        alerts = await alert_filter.get_all(channel=alert_metadata.channel)
 
         # assert
         assert alerts == {alert_key: alert_metadata}
@@ -120,7 +120,7 @@ class TestInMemoryAlertFilter:
         alert_filter._snoozed_alerts[alert_key] = alert_metadata
 
         # act
-        alerts = await alert_filter.get_all(channel_name='some_channel')
+        alerts = await alert_filter.get_all(channel='some_channel')
 
         # assert
         assert alerts == {}
@@ -140,7 +140,7 @@ class TestRedisAlertFilter:
 
         # act
         await alert_filter.snooze(
-            channel_name=alert_metadata.channel_name,
+            channel=alert_metadata.channel,
             title=alert_metadata.title,
             rule_url=alert_metadata.rule_url,
             snoozed_by=alert_metadata.snoozed_by,
@@ -157,7 +157,7 @@ class TestRedisAlertFilter:
     ):
         # arrange
         await alert_filter.snooze(
-            channel_name=alert_metadata.channel_name,
+            channel=alert_metadata.channel,
             title=alert_metadata.title,
             rule_url=alert_metadata.rule_url,
             snoozed_by=alert_metadata.snoozed_by,
@@ -166,7 +166,7 @@ class TestRedisAlertFilter:
 
         # act
         await alert_filter.snooze(
-            channel_name=alert_metadata.channel_name,
+            channel=alert_metadata.channel,
             title=alert_metadata.title,
             rule_url=alert_metadata.rule_url,
             snoozed_by=alert_metadata.snoozed_by,
@@ -178,7 +178,7 @@ class TestRedisAlertFilter:
         assert alerts == [None]
         assert (
             await alert_filter.is_snoozed(
-                channel_name=alert_metadata.channel_name,
+                channel=alert_metadata.channel,
                 rule_url=alert_metadata.rule_url,
             )
             is False
@@ -187,7 +187,7 @@ class TestRedisAlertFilter:
     async def test_is_snoozed(self, alert_filter, alert_metadata, alert_key):
         # arrange
         await alert_filter.snooze(
-            channel_name=alert_metadata.channel_name,
+            channel=alert_metadata.channel,
             title=alert_metadata.title,
             rule_url=alert_metadata.rule_url,
             snoozed_by=alert_metadata.snoozed_by,
@@ -196,7 +196,7 @@ class TestRedisAlertFilter:
 
         # act
         result = await alert_filter.is_snoozed(
-            channel_name=alert_metadata.channel_name, rule_url=alert_metadata.rule_url
+            channel=alert_metadata.channel, rule_url=alert_metadata.rule_url
         )
 
         # assert
@@ -207,7 +207,7 @@ class TestRedisAlertFilter:
     ):
         # act
         result = await alert_filter.is_snoozed(
-            channel_name=alert_metadata.channel_name, rule_url=alert_metadata.rule_url
+            channel=alert_metadata.channel, rule_url=alert_metadata.rule_url
         )
 
         # assert
@@ -217,7 +217,7 @@ class TestRedisAlertFilter:
         # arrange
         with freeze_time('2023-07-10'):
             await alert_filter.snooze(
-                channel_name=alert_metadata.channel_name,
+                channel=alert_metadata.channel,
                 title=alert_metadata.title,
                 rule_url=alert_metadata.rule_url,
                 snoozed_by=alert_metadata.snoozed_by,
@@ -226,7 +226,7 @@ class TestRedisAlertFilter:
 
         # act
         result = await alert_filter.is_snoozed(
-            channel_name=alert_metadata.channel_name, rule_url=alert_metadata.rule_url
+            channel=alert_metadata.channel, rule_url=alert_metadata.rule_url
         )
 
         # assert
@@ -235,7 +235,7 @@ class TestRedisAlertFilter:
     async def test_get_all(self, alert_filter, alert_metadata, alert_key):
         # arrange
         await alert_filter.snooze(
-            channel_name=alert_metadata.channel_name,
+            channel=alert_metadata.channel,
             title=alert_metadata.title,
             rule_url=alert_metadata.rule_url,
             snoozed_by=alert_metadata.snoozed_by,
@@ -243,7 +243,7 @@ class TestRedisAlertFilter:
         )
 
         # act
-        alerts = await alert_filter.get_all(channel_name=alert_metadata.channel_name)
+        alerts = await alert_filter.get_all(channel=alert_metadata.channel)
 
         # assert
         assert alerts == {alert_key: alert_metadata}
@@ -253,7 +253,7 @@ class TestRedisAlertFilter:
     ):
         # arrange
         await alert_filter.snooze(
-            channel_name=alert_metadata.channel_name,
+            channel=alert_metadata.channel,
             title=alert_metadata.title,
             rule_url=alert_metadata.rule_url,
             snoozed_by=alert_metadata.snoozed_by,
@@ -261,7 +261,7 @@ class TestRedisAlertFilter:
         )
 
         # act
-        alerts = await alert_filter.get_all(channel_name='some_channel')
+        alerts = await alert_filter.get_all(channel='some_channel')
 
         # assert
         assert alerts == {}
@@ -272,5 +272,5 @@ class TestRedisAlertFilter:
 
 
 @pytest.fixture(name='alert_key')
-def alert_key_fixture(alert_metadata: AlertMetadata):
-    return f'{alert_metadata.channel_name};{alert_metadata.rule_url}'
+def alert_key_fixture(channel, alert_metadata: AlertMetadata):
+    return f'{channel};{alert_metadata.rule_url}'

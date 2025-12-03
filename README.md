@@ -71,6 +71,21 @@ it is recommended to use the redis filter backend.
 7. Add your app to the channel.
 8. Create `Notification Channel` in Grafana with type `webhook` and url
    `<alert-manager-host>/slack/webhook/?channel=<target-channel-name>`.
+
+   > **Channel identification**
+   >
+   > The channel identification mode is controlled by the `USE_CHANNEL_ID` environment variable:
+   >
+   > **`USE_CHANNEL_ID=false` (default)**
+   > - Use `channel` query parameter with channel name (e.g., `?channel=alerts`)
+   >   - Simple setup, works with public channels
+   >   - **Limitation**: snooze will not work for private channels (Slack returns `privategroup` instead of actual channel name)
+   >
+   > **`USE_CHANNEL_ID=true`**
+   > - Use `channel_id` query parameter with Slack channel ID (e.g., `?channel_id=C1234567890`)
+   >   - Works correctly with both public and private channels
+   >   - To get the channel ID: right-click on the channel in Slack → "View channel details" → the Channel ID is shown at the bottom of the popup
+
    Done! Now you can send a test alert by pressing the 'Test' button. In
    the Slack channel, you should see a message like this:
 
@@ -139,4 +154,34 @@ You can do it with the following command:
 
 ```
 ngrok http 8080
+```
+
+Test curl request for sending an alert:
+
+```bash
+# Default mode (USE_CHANNEL_ID=false) - use channel name
+curl -X POST 'http://localhost:8000/webhook/grafana/?channel=alerts' \
+    -H 'Content-Type: application/json' \
+    -d '{
+      "title": "[Alerting] Test Alert",
+      "ruleName": "Test Alert",
+      "state": "alerting",
+      "ruleUrl": "http://localhost:3000/d/test/dashboard?viewPanel=1",
+      "message": "This is a test alert message",
+      "evalMatches": [
+        {
+          "value": 100,
+          "metric": "test_metric",
+          "tags": {
+            "instance": "app:8000",
+            "job": "test_job"
+          }
+        }
+      ]
+    }'
+
+# With USE_CHANNEL_ID=true - use channel ID
+curl -X POST 'http://localhost:8000/webhook/grafana/?channel_id=C1234567890' \
+    -H 'Content-Type: application/json' \
+    -d '{ ... }'
 ```

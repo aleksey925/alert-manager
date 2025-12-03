@@ -41,8 +41,12 @@ async def startup_handler(app: web.Application, config: Config) -> None:
 
     app['slack_client'] = AsyncWebClient(token=config.slack_token)
     app['slack_socket_client'] = await create_slack_socket_client(
-        app['slack_client'], t.cast(str, config.slack_socket_mode_token), app['alert_filter']
+        app['slack_client'],
+        t.cast(str, config.slack_socket_mode_token),
+        app['alert_filter'],
+        use_channel_id=config.use_channel_id,
     )
+    app['use_channel_id'] = config.use_channel_id
 
 
 async def shutdown_handler(app: web.Application) -> None:
