@@ -35,6 +35,10 @@ dev = [
     "fakeredis>=2.18.0",
 ]
 
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 pythonpath = ["./src"]
