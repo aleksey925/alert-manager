@@ -52,9 +52,7 @@ class MessageBuilder:
             'fields': [
                 {
                     'type': 'mrkdwn',
-                    'text': '\n'.join(
-                        [f'*{match.metric}:* {match.value}' for match in _eval_matches]
-                    ),
+                    'text': '\n'.join([f'*{match.metric}:* {match.value}' for match in _eval_matches]),
                 }
                 for _eval_matches in divide_seq(eval_matches)
                 if _eval_matches
@@ -128,9 +126,7 @@ class MessageBuilder:
         if message_blocks[-1].get('block_id') == 'alert-status':
             message_blocks.pop()
         if period != 'wake':
-            message_blocks.append(
-                cls._generate_alert_status_block(now=now, period=period, username=snoozed_by)
-            )
+            message_blocks.append(cls._generate_alert_status_block(now=now, period=period, username=snoozed_by))
 
         return message_blocks
 
@@ -148,9 +144,7 @@ class MessageBuilder:
         }
 
     @classmethod
-    def create_list_snoozed_alerts(
-        cls, snoozed_alerts: dict[str, AlertMetadata]
-    ) -> tuple[str, MsgBlocksType]:
+    def create_list_snoozed_alerts(cls, snoozed_alerts: dict[str, AlertMetadata]) -> tuple[str, MsgBlocksType]:
         msg_title = ':sleeping: Snoozed alerts:'
         if not snoozed_alerts:
             msg_title = cls.alerts_not_found_text

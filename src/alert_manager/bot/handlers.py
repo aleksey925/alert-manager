@@ -46,27 +46,17 @@ class Dispatcher:
         if request.type == 'slash_commands':
             await self._dispatch_commands(client=client, request=request)
 
-    async def _dispatch_actions(
-        self, *, client: SocketModeClient, request: SocketModeRequest
-    ) -> None:
+    async def _dispatch_actions(self, *, client: SocketModeClient, request: SocketModeRequest) -> None:
         if request.payload['type'] != 'block_actions':
             return
 
-        actions_by_ids = {
-            action_obj['action_id']: action_obj for action_obj in request.payload['actions']
-        }
+        actions_by_ids = {action_obj['action_id']: action_obj for action_obj in request.payload['actions']}
         if 'snooze-for' in actions_by_ids:
-            await self.snooze_handler(
-                client=client, request=request, action=actions_by_ids['snooze-for']
-            )
+            await self.snooze_handler(client=client, request=request, action=actions_by_ids['snooze-for'])
         if 'wake-up' in actions_by_ids:
-            await self.wake_up_handler(
-                client=client, request=request, action=actions_by_ids['wake-up']
-            )
+            await self.wake_up_handler(client=client, request=request, action=actions_by_ids['wake-up'])
 
-    async def _dispatch_commands(
-        self, *, client: SocketModeClient, request: SocketModeRequest
-    ) -> None:
+    async def _dispatch_commands(self, *, client: SocketModeClient, request: SocketModeRequest) -> None:
         if request.payload['command'] == '/get-snoozed-alerts':
             await self.get_snoozed_alerts_handler(client=client, request=request)
 
@@ -136,9 +126,7 @@ class Dispatcher:
         )
 
     @auto_ack
-    async def get_snoozed_alerts_handler(
-        self, *, client: SocketModeClient, request: SocketModeRequest
-    ) -> None:
+    async def get_snoozed_alerts_handler(self, *, client: SocketModeClient, request: SocketModeRequest) -> None:
         if self.use_channel_id:
             channel = request.payload['channel_id']
         else:

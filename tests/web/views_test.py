@@ -42,11 +42,17 @@ class TestGrafanaAlertViewLegacyAlert:
                     'fields': [
                         {
                             'type': 'mrkdwn',
-                            'text': f'*{alert_payload["evalMatches"][0]["metric"]}:* {alert_payload["evalMatches"][0]["value"]}',
+                            'text': (
+                                f'*{alert_payload["evalMatches"][0]["metric"]}:* '
+                                f'{alert_payload["evalMatches"][0]["value"]}'
+                            ),
                         },
                         {
                             'type': 'mrkdwn',
-                            'text': f'*{alert_payload["evalMatches"][1]["metric"]}:* {alert_payload["evalMatches"][1]["value"]}',
+                            'text': (
+                                f'*{alert_payload["evalMatches"][1]["metric"]}:* '
+                                f'{alert_payload["evalMatches"][1]["value"]}'
+                            ),
                         },
                     ],
                 },
@@ -149,7 +155,9 @@ class TestGrafanaAlertViewLegacyAlert:
                     'block_id': f'title|{legacy_alert_ok["ruleUrl"]}',
                     'text': {
                         'type': 'mrkdwn',
-                        'text': f':large_green_circle: <{legacy_alert_ok["ruleUrl"]}|*[OK] {legacy_alert_ok["ruleName"]}*>',
+                        'text': (
+                            f':large_green_circle: <{legacy_alert_ok["ruleUrl"]}|*[OK] {legacy_alert_ok["ruleName"]}*>'
+                        ),
                     },
                 }
             ],

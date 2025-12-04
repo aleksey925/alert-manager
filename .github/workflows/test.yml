@@ -1,4 +1,4 @@
-name: test
+name: tests
 
 on:
   pull_request:
@@ -8,45 +8,25 @@ on:
     branches:
       - 'master'
 
-env:
-  PDM_VERSION: "2.9.1"
-  PYTHON_VERSION: "3.11"
-
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup PDM & Python
-        uses: pdm-project/setup-pdm@v3
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          version: ${{ env.PDM_VERSION }}
-
+      - uses: actions/checkout@v5
+      - name: Install tools
+        uses: jdx/mise-action@v3
       - name: Install dependencies
-        run: |
-          pdm config python.use_venv false
-          pdm install --group dev
-
+        run: uv sync
       - name: Run lint
-        run: pdm run pre-commit run --all
+        run: make lint
 
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup PDM & Python
-        uses: pdm-project/setup-pdm@v3
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          version: ${{ env.PDM_VERSION }}
-
+      - uses: actions/checkout@v5
+      - name: Install tools
+        uses: jdx/mise-action@v3
       - name: Install dependencies
-        run: |
-          pdm config python.use_venv false
-          pdm install --group dev
-
+        run: uv sync
       - name: Run tests
         run: make test

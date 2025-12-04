@@ -19,10 +19,11 @@ dependencies = [
     "structlog>=23.2.0",
     "sentry-sdk>=1.30.0",
 ]
-[project.optional-dependencies]
+
+[dependency-groups]
 dev = [
-    "pytest>=7.4.1",
-    "pytest-asyncio>=0.21.0",
+    "pytest>=7.4.1,<8.0.0",
+    "pytest-asyncio>=0.21.1,<1.0.0",
     "pytest-aiohttp>=1.0.5",
     "pytest-mock>=3.12.0",
     "pytest-cov>=4.1.0",
@@ -39,12 +40,14 @@ asyncio_mode = "auto"
 pythonpath = ["./src"]
 testpaths = ["tests"]
 
-[tool.black]
-target_version = ["py311"]
-line-length = 100
-skip_string_normalization = true
-
 [tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.ruff.lint]
 select = [
     "A",    # flake8-builtins
     "E",    # pycodestyle errors
@@ -52,25 +55,23 @@ select = [
     "F",    # pyflakes
     "I",    # isort
     "N",    # pep8-naming
-    "Q",    # flake8-quotes
-    "C4",   # flake8-comprehensions
     "T20",  # flake8-print
+    "C90",  # flake8-complexity (mccabe)
+    "UP",   # pyupgrade
     "RUF",  # ruff
+    "S",    # flake8-bandit
 ]
 ignore = [
-    "E501",  # line too long, handled by black
     "A003",  # class attribute {name} is shadowing a python builtin
-    "C409",  # rewrite tuple() -> ()
+    "S101",  # use of assert detected
 ]
-target-version = "py311"
-isort = { known-first-party = ['alert_manager', 'tests'] }
 
-[tool.ruff.flake8-quotes]
-inline-quotes = "single"
+[tool.ruff.lint.isort]
+known-first-party = ["alert_manager", "tests"]
 
 [tool.mypy]
 python_version = "3.11"
-disallow_any_generics = true
-disallow_untyped_defs = true
+plugins = ["pydantic.mypy"]
+strict = true
+show_error_codes = true
 no_implicit_optional = false
-exclude = "tests"

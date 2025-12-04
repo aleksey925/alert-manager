@@ -12,9 +12,7 @@ class BaseAlertFilter(ABC):
         return f'{channel};{rule_url}'
 
     @abstractmethod
-    async def snooze(
-        self, channel: str, title: str, rule_url: str, snoozed_by: str, minutes: int
-    ) -> None:
+    async def snooze(self, channel: str, title: str, rule_url: str, snoozed_by: str, minutes: int) -> None:
         raise NotImplementedError  # pragma: no cover
 
     async def wake_up(self, key: str) -> None:
@@ -34,9 +32,7 @@ class InMemoryAlertFilter(BaseAlertFilter):
         self._snoozed_alerts: dict[str, AlertMetadata] = {}
         self._periodic_clean_task = periodic_task(self._clean_alerts, 120)
 
-    async def snooze(
-        self, channel: str, title: str, rule_url: str, snoozed_by: str, minutes: int
-    ) -> None:
+    async def snooze(self, channel: str, title: str, rule_url: str, snoozed_by: str, minutes: int) -> None:
         key = self.create_key(channel, rule_url)
         if minutes == 0:
             await self.wake_up(key)
@@ -74,20 +70,14 @@ class InMemoryAlertFilter(BaseAlertFilter):
         }
 
     async def get_all(self, channel: str) -> dict[str, AlertMetadata]:
-        return {
-            key: metadata
-            for key, metadata in self._snoozed_alerts.items()
-            if metadata.channel == channel
-        }
+        return {key: metadata for key, metadata in self._snoozed_alerts.items() if metadata.channel == channel}
 
 
 class RedisAlertFilter(BaseAlertFilter):
     def __init__(self, redis: Redis) -> None:  # type: ignore[type-arg]
         self.redis = redis
 
-    async def snooze(
-        self, channel: str, title: str, rule_url: str, snoozed_by: str, minutes: int
-    ) -> None:
+    async def snooze(self, channel: str, title: str, rule_url: str, snoozed_by: str, minutes: int) -> None:
         key = self.create_key(channel, rule_url)
         if minutes == 0:
             await self.wake_up(key)
@@ -99,9 +89,7 @@ class RedisAlertFilter(BaseAlertFilter):
                 snoozed_until=(datetime.now() + timedelta(minutes=minutes)).timestamp(),
                 channel=channel,
             )
-            await self.redis.set(
-                key, metadata.model_dump_json(), ex=int(timedelta(minutes=minutes).total_seconds())
-            )
+            await self.redis.set(key, metadata.model_dump_json(), ex=int(timedelta(minutes=minutes).total_seconds()))
 
     async def wake_up(self, key: str) -> None:
         await self.redis.delete(key)

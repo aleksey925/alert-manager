@@ -28,4 +28,4 @@ def require_user(
     if basic_auth.password != saved_password:
         raise web.HTTPUnauthorized(text='Authorisation failed')
 
-    return basic_auth.login
+    return str(basic_auth.login)

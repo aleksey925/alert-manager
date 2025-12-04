@@ -29,7 +29,9 @@ def config_fixture():
             return (init_settings,)
 
     return ConfigMock(
-        slack_token='slack_token', slack_socket_mode_token='slack_socket_mode_token', accounts='{}'
+        slack_token='slack_token',  # noqa: S106
+        slack_socket_mode_token='slack_socket_mode_token',  # noqa: S106
+        accounts='{}',
     )
 
 
@@ -56,9 +58,7 @@ def slack_socket_client_fixture(mocker: MockFixture):
 
 
 @pytest.fixture(name='app')
-async def app_fixture(
-    mocker: MockFixture, config, redis, alert_filter, slack_client, slack_socket_client
-):
+async def app_fixture(mocker: MockFixture, config, redis, alert_filter, slack_client, slack_socket_client):
     mocker.patch('alert_manager.main.startup_handler')
     app = app_factory(config)
     app['redis'] = redis

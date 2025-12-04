@@ -1,8 +1,8 @@
 import time
 import typing as t
 
-from structlog.processors import EventDict
 from structlog.processors import TimeStamper as _TimeStamper
+from structlog.typing import EventDict
 
 
 class TimeStamper(_TimeStamper):

@@ -18,5 +18,5 @@ async def create_client(
 
     dispatcher = Dispatcher(slack_client, alert_filter, use_channel_id=use_channel_id)
     slack_socket_client.socket_mode_request_listeners.append(dispatcher)  # type: ignore[arg-type]
-    await slack_socket_client.connect()
+    await slack_socket_client.connect()  # type: ignore[no-untyped-call]
     return slack_socket_client
