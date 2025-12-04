@@ -84,11 +84,6 @@ def webhook_url_fixture(channel):
     return f'/webhook/grafana/?channel={channel}'
 
 
-@pytest.fixture(name='channel_id')
-def channel_id_fixture():
-    return 'C1234567890'
-
-
 @pytest.fixture(name='alert_metadata')
 @freeze_time('2023-07-11')
 def alert_metadata_fixture(channel, legacy_alert_alerting):
