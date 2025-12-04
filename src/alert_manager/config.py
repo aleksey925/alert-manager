@@ -56,6 +56,7 @@ class Config(BaseSettings):
     log_health_check_is_enable: bool = True
     filter_backend: FilterBackend = Field(default=FilterBackend.in_memory)
     router_prefix: str = ''
+    use_channel_id: bool = Field(default=False)
     accounts: Json[dict[str, str]] | None = Field(
         default=None,
         json_schema_extra={'vault_secret_path': VAULT_SECRET_PATH, 'vault_secret_key': 'accounts'},
@@ -109,9 +110,7 @@ class Config(BaseSettings):
         },
     )
 
-    model_config: t.ClassVar[SettingsConfigDict] = SettingsConfigDict(
-        env_file=project_dir / '.env', extra='ignore'
-    )
+    model_config: t.ClassVar[SettingsConfigDict] = SettingsConfigDict(env_file=project_dir / '.env', extra='ignore')
 
     @field_validator('router_prefix')
     @classmethod
@@ -157,7 +156,7 @@ def get_config() -> Config:
     try:
         config = _inst['conf']
     except KeyError:
-        config = Config()  # type: ignore[call-arg]
+        config = Config()
         _inst['conf'] = config
         save_secrets_to_file(config)
 

@@ -29,7 +29,9 @@ def config_fixture():
             return (init_settings,)
 
     return ConfigMock(
-        slack_token='slack_token', slack_socket_mode_token='slack_socket_mode_token', accounts='{}'
+        slack_token='slack_token',  # noqa: S106
+        slack_socket_mode_token='slack_socket_mode_token',  # noqa: S106
+        accounts='{}',
     )
 
 
@@ -56,15 +58,14 @@ def slack_socket_client_fixture(mocker: MockFixture):
 
 
 @pytest.fixture(name='app')
-async def app_fixture(
-    mocker: MockFixture, config, redis, alert_filter, slack_client, slack_socket_client
-):
+async def app_fixture(mocker: MockFixture, config, redis, alert_filter, slack_client, slack_socket_client):
     mocker.patch('alert_manager.main.startup_handler')
     app = app_factory(config)
     app['redis'] = redis
     app['alert_filter'] = alert_filter
     app['slack_client'] = slack_client
     app['slack_socket_client'] = slack_socket_client
+    app['use_channel_id'] = False
     yield app
 
 
@@ -87,7 +88,7 @@ def webhook_url_fixture(channel):
 @freeze_time('2023-07-11')
 def alert_metadata_fixture(channel, legacy_alert_alerting):
     return AlertMetadata(
-        channel_name=channel,
+        channel=channel,
         title=legacy_alert_alerting['title'],
         snoozed_by='user_nick',
         snoozed_until=(datetime.now() + timedelta(minutes=10)).timestamp(),

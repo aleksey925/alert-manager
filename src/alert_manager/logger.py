@@ -84,9 +84,7 @@ def init_logger(
     log_health_check_is_enable: bool,
 ) -> None:
     level = getattr(logging, log_level.upper())
-    renderer: ConsoleRenderer | JSONRenderer = (
-        json_renderer if log_format == 'json' else simple_renderer
-    )
+    renderer: ConsoleRenderer | JSONRenderer = json_renderer if log_format == 'json' else simple_renderer
 
     processors = get_processors(log_timestamp_format)
     _init_logging(level, processors, renderer, log_health_check_is_enable)

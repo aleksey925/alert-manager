@@ -13,9 +13,7 @@ __all__ = [
 
 @pytest.fixture
 def legacy_alert_alerting(test_dir: Path):
-    return json.loads((test_dir / 'data' / 'legacy_alerts.json').read_text())['alerting'][
-        'two_matches'
-    ]
+    return json.loads((test_dir / 'data' / 'legacy_alerts.json').read_text())['alerting']['two_matches']
 
 
 @pytest.fixture

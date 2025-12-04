@@ -1,9 +1,8 @@
-import typing as t
 from functools import partial
 
 import sentry_sdk
 from aiohttp import web
-from aiohttp_deps import Router, setup_swagger
+from aiohttp_deps import VALUES_OVERRIDES_KEY, Router, setup_swagger
 from aiohttp_deps import init as deps_init
 from redis.asyncio.client import Redis
 from redis.connection import parse_url as parse_redis_url
@@ -41,8 +40,12 @@ async def startup_handler(app: web.Application, config: Config) -> None:
 
     app['slack_client'] = AsyncWebClient(token=config.slack_token)
     app['slack_socket_client'] = await create_slack_socket_client(
-        app['slack_client'], t.cast(str, config.slack_socket_mode_token), app['alert_filter']
+        app['slack_client'],
+        config.slack_socket_mode_token,
+        app['alert_filter'],
+        use_channel_id=config.use_channel_id,
     )
+    app['use_channel_id'] = config.use_channel_id
 
 
 async def shutdown_handler(app: web.Application) -> None:
@@ -75,6 +78,6 @@ def app_factory(config: Config) -> web.Application:
     app.on_shutdown.append(shutdown_handler)
     app.add_routes(main_router)
 
-    app['values_overrides'] = {accounts_dep: config.accounts}
+    app[VALUES_OVERRIDES_KEY] = {accounts_dep: config.accounts}
 
     return app

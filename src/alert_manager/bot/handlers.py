@@ -1,3 +1,4 @@
+import logging
 import typing as t
 from functools import wraps
 
@@ -9,6 +10,8 @@ from slack_sdk.web.async_client import AsyncWebClient
 from alert_manager.services.alert_filter_backend import BaseAlertFilter
 from alert_manager.services.slack.exceptions import RuleUrlExtractError
 from alert_manager.services.slack.message import MessageBuilder, get_rule_url
+
+logger = logging.getLogger(__name__)
 
 T = t.TypeVar('T')
 P = t.ParamSpec('P')
@@ -26,9 +29,15 @@ def auto_ack(func: t.Callable[P, t.Awaitable[T]]) -> t.Callable[P, t.Awaitable[N
 
 
 class Dispatcher:
-    def __init__(self, slack_client: AsyncWebClient, alert_filter: BaseAlertFilter) -> None:
+    def __init__(
+        self,
+        slack_client: AsyncWebClient,
+        alert_filter: BaseAlertFilter,
+        use_channel_id: bool,
+    ) -> None:
         self.slack_client = slack_client
         self.alert_filter: BaseAlertFilter = alert_filter
+        self.use_channel_id = use_channel_id
 
     async def __call__(self, client: SocketModeClient, request: SocketModeRequest) -> None:
         if request.type == 'interactive':
@@ -37,27 +46,17 @@ class Dispatcher:
         if request.type == 'slash_commands':
             await self._dispatch_commands(client=client, request=request)
 
-    async def _dispatch_actions(
-        self, *, client: SocketModeClient, request: SocketModeRequest
-    ) -> None:
+    async def _dispatch_actions(self, *, client: SocketModeClient, request: SocketModeRequest) -> None:
         if request.payload['type'] != 'block_actions':
             return
 
-        actions_by_ids = {
-            action_obj['action_id']: action_obj for action_obj in request.payload['actions']
-        }
+        actions_by_ids = {action_obj['action_id']: action_obj for action_obj in request.payload['actions']}
         if 'snooze-for' in actions_by_ids:
-            await self.snooze_handler(
-                client=client, request=request, action=actions_by_ids['snooze-for']
-            )
+            await self.snooze_handler(client=client, request=request, action=actions_by_ids['snooze-for'])
         if 'wake-up' in actions_by_ids:
-            await self.wake_up_handler(
-                client=client, request=request, action=actions_by_ids['wake-up']
-            )
+            await self.wake_up_handler(client=client, request=request, action=actions_by_ids['wake-up'])
 
-    async def _dispatch_commands(
-        self, *, client: SocketModeClient, request: SocketModeRequest
-    ) -> None:
+    async def _dispatch_commands(self, *, client: SocketModeClient, request: SocketModeRequest) -> None:
         if request.payload['command'] == '/get-snoozed-alerts':
             await self.get_snoozed_alerts_handler(client=client, request=request)
 
@@ -73,14 +72,28 @@ class Dispatcher:
             snoozed_by=snoozed_by,
         )
 
+        channel_id: str = request.payload['channel']['id']
         channel_name: str = request.payload['channel']['name']
         rule_url = get_rule_url(request.payload['message']['blocks'])
         if not rule_url:
             raise RuleUrlExtractError("Can't extract rule url from source message")
 
+        if self.use_channel_id:
+            channel = channel_id
+        else:
+            channel = channel_name
+            if channel_name == 'privategroup':
+                logger.warning(
+                    'Snoozing alert in private channel with USE_CHANNEL_ID=false. '
+                    'Snooze will not work. Set USE_CHANNEL_ID=true and use channel_id '
+                    'in webhook URL. Channel ID: %s, rule: %s',
+                    channel_id,
+                    rule_url,
+                )
+
         minutes = int(request.payload['actions'][0]['selected_option']['value'])
         await self.alert_filter.snooze(
-            channel_name=channel_name,
+            channel=channel,
             title=title,
             rule_url=rule_url,
             snoozed_by=snoozed_by,
@@ -88,7 +101,7 @@ class Dispatcher:
         )
 
         await self.slack_client.chat_update(
-            channel=request.payload['channel']['id'],
+            channel=channel_id,
             ts=request.payload['message']['ts'],
             blocks=blocks,
             text=title,
@@ -113,10 +126,13 @@ class Dispatcher:
         )
 
     @auto_ack
-    async def get_snoozed_alerts_handler(
-        self, *, client: SocketModeClient, request: SocketModeRequest
-    ) -> None:
-        snoozed_alerts = await self.alert_filter.get_all(request.payload['channel_name'])
+    async def get_snoozed_alerts_handler(self, *, client: SocketModeClient, request: SocketModeRequest) -> None:
+        if self.use_channel_id:
+            channel = request.payload['channel_id']
+        else:
+            channel = request.payload['channel_name']
+
+        snoozed_alerts = await self.alert_filter.get_all(channel)
         text, blocks = MessageBuilder.create_list_snoozed_alerts(snoozed_alerts)
         await self.slack_client.chat_postMessage(
             channel=request.payload['channel_id'],
