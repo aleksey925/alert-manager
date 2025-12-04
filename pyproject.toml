@@ -66,9 +66,6 @@ ignore = [
     "S101",  # use of assert detected
 ]
 
-[tool.ruff.lint.isort]
-known-first-party = ["alert_manager", "tests"]
-
 [tool.mypy]
 python_version = "3.11"
 plugins = ["pydantic.mypy"]
