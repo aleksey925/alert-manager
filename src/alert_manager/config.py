@@ -109,6 +109,7 @@ class Config(BaseSettings):
             'vault_secret_key': 'redis_ssl_client_key',
         },
     )
+    redis_ssl_check_hostname: bool = True
 
     model_config: t.ClassVar[SettingsConfigDict] = SettingsConfigDict(env_file=project_dir / '.env', extra='ignore')
 
