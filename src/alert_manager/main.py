@@ -26,7 +26,7 @@ async def startup_handler(app: web.Application, config: Config) -> None:
         if config.redis_url is None:
             raise ValueError('Redis url is not set')
         redis_params = {
-            **parse_redis_url(config.redis_url),
+            **parse_redis_url(config.redis_url),  # type: ignore[no-untyped-call]
             'ssl': bool(config.redis_ssl_ca_certs_path),
             'ssl_ca_certs': config.redis_ssl_ca_certs_path,
             'ssl_certfile': config.redis_ssl_client_cert_path,
