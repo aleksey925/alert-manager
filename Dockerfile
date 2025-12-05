@@ -1,4 +1,4 @@
-FROM debian:bookworm-slim AS exporter
+FROM debian:13-slim AS exporter
 
 RUN apt-get update \
     && apt-get -y --no-install-recommends install \
@@ -22,7 +22,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv export -o requirements.txt --no-default-groups --no-hashes --no-annotate --frozen --no-emit-project
 
 ######################################################################
-FROM python:3.11-slim-buster
+FROM python:3.14-slim-trixie
 
 ENV PYTHONPATH=/opt/app/src
 WORKDIR /opt/app/

@@ -13,11 +13,8 @@ from alert_manager.services.slack.message import MessageBuilder, get_rule_url
 
 logger = logging.getLogger(__name__)
 
-T = t.TypeVar('T')
-P = t.ParamSpec('P')
 
-
-def auto_ack(func: t.Callable[P, t.Awaitable[T]]) -> t.Callable[P, t.Awaitable[None]]:
+def auto_ack[T, **P](func: t.Callable[P, t.Awaitable[T]]) -> t.Callable[P, t.Awaitable[None]]:
     @wraps(func)
     async def wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
         await func(*args, **kwargs)
