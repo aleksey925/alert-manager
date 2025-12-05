@@ -8,5 +8,5 @@ _.source = { path = ".env.sh", tools = true }
 _.file = { path = ".env", tools = true }
 
 [tools]
-python = "3.11"
+python = "3.14"
 uv = "0.9.15"

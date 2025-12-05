@@ -74,7 +74,7 @@ class InMemoryAlertFilter(BaseAlertFilter):
 
 
 class RedisAlertFilter(BaseAlertFilter):
-    def __init__(self, redis: Redis) -> None:  # type: ignore[type-arg]
+    def __init__(self, redis: Redis) -> None:
         self.redis = redis
 
     async def snooze(self, channel: str, title: str, rule_url: str, snoozed_by: str, minutes: int) -> None:
