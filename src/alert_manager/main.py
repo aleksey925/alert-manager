@@ -1,3 +1,5 @@
+import logging
+from collections.abc import Awaitable, Callable
 from functools import partial
 
 import sentry_sdk
@@ -19,6 +21,20 @@ from alert_manager.services.alert_filter_backend import (
     RedisAlertFilter,
 )
 from alert_manager.web.views import router
+
+logger = logging.getLogger(__name__)
+
+
+@web.middleware
+async def error_logging_middleware(
+    request: web.Request,
+    handler: Callable[[web.Request], Awaitable[web.StreamResponse]],
+) -> web.StreamResponse:
+    try:
+        return await handler(request)
+    except Exception as exc:
+        logger.warning('Unhandled exception occurred during handling request', exc_info=exc)
+        raise
 
 
 async def startup_handler(app: web.Application, config: Config) -> None:
@@ -74,7 +90,7 @@ def app_factory(config: Config) -> web.Application:
     main_router = Router()
     main_router.add_routes(router, prefix=config.router_prefix)
 
-    app = web.Application()
+    app = web.Application(middlewares=[error_logging_middleware])
     app.on_startup.extend((deps_init, setup_swagger(), partial(startup_handler, config=config)))
     app.on_shutdown.append(shutdown_handler)
     app.add_routes(main_router)
