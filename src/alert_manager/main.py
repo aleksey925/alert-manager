@@ -30,11 +30,18 @@ async def error_logging_middleware(
     request: web.Request,
     handler: Callable[[web.Request], Awaitable[web.StreamResponse]],
 ) -> web.StreamResponse:
-    try:
-        return await handler(request)
-    except Exception as exc:
-        logger.warning('Unhandled exception occurred during handling request', exc_info=exc)
-        raise
+    response = await handler(request)
+    if response.status >= 400:
+        body = getattr(response, 'text', None) or getattr(response, '_body', b'').decode()
+        logger.warning(
+            'HTTP error response: %s %s -> %d: %s',
+            request.method,
+            request.path,
+            response.status,
+            body,
+        )
+
+    return response
 
 
 async def startup_handler(app: web.Application, config: Config) -> None:

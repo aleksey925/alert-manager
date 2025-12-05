@@ -1,5 +1,7 @@
 import logging
+import sys
 from logging.config import dictConfig
+from types import TracebackType
 
 import structlog
 from structlog.dev import ConsoleRenderer
@@ -10,6 +12,14 @@ from alert_manager.libs.structlog_utils import TimeStamper
 
 json_renderer = JSONRenderer(ensure_ascii=False)
 simple_renderer = ConsoleRenderer(colors=True)
+
+
+def handle_unexpected_exception(
+    exc_type: type[BaseException],
+    exc_value: BaseException,
+    exc_traceback: TracebackType | None,
+) -> None:
+    logging.getLogger().error('Unhandled exception', exc_info=(exc_type, exc_value, exc_traceback))
 
 
 class EndpointFilter(logging.Filter):
@@ -83,6 +93,8 @@ def init_logger(
     log_timestamp_format: str | None,
     log_health_check_is_enable: bool,
 ) -> None:
+    sys.excepthook = handle_unexpected_exception
+
     level = getattr(logging, log_level.upper())
     renderer: ConsoleRenderer | JSONRenderer = json_renderer if log_format == 'json' else simple_renderer
 
