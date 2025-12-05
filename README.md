@@ -119,6 +119,7 @@ these settings corresponds to the name of the key in the secret of the vault):
 - redis_ssl_ca_certs
 - redis_ssl_client_cert
 - redis_ssl_client_key
+- redis_ssl_check_hostname
 
 
 ### Monitoring
