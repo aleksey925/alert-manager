@@ -31,6 +31,7 @@ async def startup_handler(app: web.Application, config: Config) -> None:
             'ssl_ca_certs': config.redis_ssl_ca_certs_path,
             'ssl_certfile': config.redis_ssl_client_cert_path,
             'ssl_keyfile': config.redis_ssl_client_key_path,
+            'ssl_check_hostname': config.redis_ssl_check_hostname,
         }
         app['redis'] = Redis(**redis_params)
         app['alert_filter'] = RedisAlertFilter(app['redis'])
