@@ -7,15 +7,20 @@ repos:
       - id: name-tests-test
         exclude: tests/fixtures
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.14.7"
-    hooks:
-      - id: ruff-format
-      - id: ruff
-        args: ["--fix"]
-
   - repo: local
     hooks:
+      - id: ruff-format
+        name: ruff-format
+        language: system
+        entry: ruff format
+        types: [python]
+
+      - id: ruff
+        name: ruff
+        language: system
+        entry: ruff check --fix
+        types: [python]
+
       - id: lock-file-check
         name: lock file check
         language: system

@@ -1,9 +1,9 @@
-import logging
 from collections.abc import Awaitable, Callable
 from functools import partial
 
 import sentry_sdk
 from aiohttp import web
+from aiohttp.web_exceptions import HTTPError
 from aiohttp_deps import VALUES_OVERRIDES_KEY, Router, setup_swagger
 from aiohttp_deps import init as deps_init
 from redis.asyncio.client import Redis
@@ -11,10 +11,12 @@ from redis.connection import parse_url as parse_redis_url
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 from sentry_sdk.integrations.asyncio import AsyncioIntegration
 from slack_sdk.web.async_client import AsyncWebClient
+from structlog import getLogger
 
 from alert_manager.bot.app import create_client as create_slack_socket_client
 from alert_manager.config import Config, FilterBackend
 from alert_manager.libs.security import accounts_dep
+from alert_manager.libs.sentry import capture_message
 from alert_manager.logger import init_logger
 from alert_manager.services.alert_filter_backend import (
     InMemoryAlertFilter,
@@ -22,7 +24,7 @@ from alert_manager.services.alert_filter_backend import (
 )
 from alert_manager.web.views import router
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 @web.middleware
@@ -30,16 +32,23 @@ async def error_logging_middleware(
     request: web.Request,
     handler: Callable[[web.Request], Awaitable[web.StreamResponse]],
 ) -> web.StreamResponse:
-    response = await handler(request)
+    try:
+        response = await handler(request)
+    except HTTPError as exc:
+        response = exc
+
     if response.status >= 400:
-        body = getattr(response, 'text', None) or getattr(response, '_body', b'').decode()
-        logger.warning(
-            'HTTP error response: %s %s -> %d: %s',
-            request.method,
-            request.path,
-            response.status,
-            body,
-        )
+        resp_body = getattr(response, 'text', None) or getattr(response, '_body', b'').decode()
+        msg = 'HTTP error response'
+        ctx = {
+            'method': request.method,
+            'path': request.path,
+            'status': response.status,
+            'req_body': await request.text(),
+            'resp_body': resp_body,
+        }
+        capture_message(message=msg, level='warning', extra=ctx)
+        logger.warning(msg, **ctx)
 
     return response
 
