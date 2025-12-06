@@ -1,6 +1,13 @@
+from unittest.mock import MagicMock
+
 import pytest
+from aiohttp import web
 from aiohttp.helpers import BasicAuth
+from aiohttp.web_exceptions import HTTPBadRequest, HTTPNotFound
 from pytest_aiohttp.plugin import AiohttpClient
+from pytest_mock import MockFixture
+
+from alert_manager.main import error_logging_middleware
 
 
 class TestGrafanaAlertViewLegacyAlert:
@@ -260,3 +267,126 @@ async def test_grafana_alert_view(client: AiohttpClient, slack_client, webhook_u
     # assert
     assert resp.status == 200
     assert await resp.json() == {'status': 'ok'}
+
+
+class TestErrorLoggingMiddleware:
+    async def test_successful_response__no_logging(
+        self,
+        client: AiohttpClient,
+        mock_capture_message: MagicMock,
+        mock_logger: MagicMock,
+    ):
+        # act
+        resp = await client.get('/success')
+
+        # assert
+        assert resp.status == 200
+        mock_capture_message.assert_not_called()
+        mock_logger.warning.assert_not_called()
+
+    async def test_error_response__logs_error(
+        self,
+        client: AiohttpClient,
+        mock_capture_message: MagicMock,
+        mock_logger: MagicMock,
+    ):
+        # act
+        resp = await client.get('/error-response')
+
+        # assert
+        assert resp.status == 400
+        mock_capture_message.assert_called_once_with(
+            message='HTTP error response',
+            level='warning',
+            extra={
+                'method': 'GET',
+                'path': '/error-response',
+                'status': 400,
+                'req_body': '',
+                'resp_body': 'Bad request error',
+            },
+        )
+        mock_logger.warning.assert_called_once_with(
+            'HTTP error response',
+            method='GET',
+            path='/error-response',
+            status=400,
+            req_body='',
+            resp_body='Bad request error',
+        )
+
+    async def test_http_exception_raised__logs_error(
+        self,
+        client: AiohttpClient,
+        mock_capture_message: MagicMock,
+        mock_logger: MagicMock,
+    ):
+        # act
+        resp = await client.get('/raises-exception')
+
+        # assert
+        assert resp.status == 404
+        mock_capture_message.assert_called_once_with(
+            message='HTTP error response',
+            level='warning',
+            extra={
+                'method': 'GET',
+                'path': '/raises-exception',
+                'status': 404,
+                'req_body': '',
+                'resp_body': '404: Not Found',
+            },
+        )
+        mock_logger.warning.assert_called_once_with(
+            'HTTP error response',
+            method='GET',
+            path='/raises-exception',
+            status=404,
+            req_body='',
+            resp_body='404: Not Found',
+        )
+
+    async def test_http_exception_with_custom_text__logs_custom_text(
+        self,
+        client: AiohttpClient,
+        mock_capture_message: MagicMock,
+    ):
+        # act
+        resp = await client.get('/raises-bad-request')
+
+        # assert
+        assert resp.status == 400
+        assert mock_capture_message.call_args[1]['extra']['resp_body'] == 'Custom error message'
+
+    @pytest.fixture(name='mock_capture_message')
+    def mock_capture_message_fixture(self, mocker: MockFixture) -> MagicMock:
+        return mocker.patch('alert_manager.main.capture_message')
+
+    @pytest.fixture(name='mock_logger')
+    def mock_logger_fixture(self, mocker: MockFixture) -> MagicMock:
+        return mocker.patch('alert_manager.main.logger')
+
+    @pytest.fixture(name='app')
+    def app_fixture(self, mock_capture_message: MagicMock, mock_logger: MagicMock):
+        async def success_handler(request: web.Request) -> web.Response:
+            return web.Response(text='OK')
+
+        async def error_response_handler(request: web.Request) -> web.Response:
+            return web.Response(status=400, text='Bad request error')
+
+        async def raises_exception_handler(request: web.Request) -> web.Response:
+            raise HTTPNotFound
+
+        async def raises_bad_request_handler(request: web.Request) -> web.Response:
+            raise HTTPBadRequest(text='Custom error message')
+
+        app = web.Application(middlewares=[error_logging_middleware])
+        app.router.add_get('/success', success_handler)
+        app.router.add_get('/error-response', error_response_handler)
+        app.router.add_get('/raises-exception', raises_exception_handler)
+        app.router.add_get('/raises-bad-request', raises_bad_request_handler)
+        return app
+
+    @pytest.fixture
+    async def client(self, aiohttp_client, app) -> AiohttpClient:
+        return await aiohttp_client(app)

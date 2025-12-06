@@ -9,4 +9,5 @@ _.file = { path = ".env", tools = true }
 
 [tools]
 python = "3.14"
+ruff = "0.14.8"
 uv = "0.9.15"
