@@ -30,10 +30,9 @@ WORKDIR /opt/app/
 RUN groupadd app_user \
     && useradd --gid app_user --shell /bin/bash --create-home app_user
 
-COPY --from=exporter /opt/app/pyproject.toml /opt/app/requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt && \
-    find /usr/local -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true && \
-    find /usr/local -type f -name "*.pyc" -delete 2>/dev/null || true && \
+COPY --from=exporter /opt/app/pyproject.toml /opt/app/requirements.txt /opt/app/
+RUN pip install --no-cache-dir -r /opt/app/requirements.txt && \
+    (find /usr/local -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true) && \
     rm -rf /root/.cache /tmp/*
 
 COPY src/ /opt/app/src
